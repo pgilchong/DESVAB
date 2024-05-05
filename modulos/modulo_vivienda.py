@@ -127,7 +127,7 @@ class AreaVivienda:
         explicar método
         """
         # Calcular huella de carbono de nueva construcción
-        huella = self.viviendas_nuevas * SUPERFICIE_PROMEDIO * EMISIONES_NUEVA_CONSTRUCCION
+        huella = self.viviendas_nuevas * SUPERFICIE_PROMEDIO/100 * EMISIONES_NUEVA_CONSTRUCCION
 
         # Guardar atributo
         self.huella = huella

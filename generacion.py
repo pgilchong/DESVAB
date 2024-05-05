@@ -49,10 +49,11 @@ def main(
     movilidad = AreaMovilidad(verbose=verbose)
     urbanismo = AreaUrbanismo(verbose=verbose)
     residuos = AreaResiduos(verbose=verbose)
-    poblacion = pd.read_excel(barrios_path, usecols=['ID', 'Población'], skipfooter=2)
-    poblacion.set_index('ID', inplace=True)
-    poblacion.index = poblacion.index.astype(str)
-    poblacion = poblacion.squeeze()
+    barrios = pd.read_excel(barrios_path, usecols=['ID', 'Nombre', 'Población'], skipfooter=2)
+    barrios.set_index('ID', inplace=True)
+    barrios.index = barrios.index.astype(str)
+    nombre_barrios = barrios['Nombre']
+    poblacion = barrios['Población']
     if verbose:
         print(f'Áreas inicializadas en {time.time() - start_time:.2f} s')
 
@@ -71,7 +72,7 @@ def main(
                 writer = pd.ExcelWriter(os.path.join(resultados_path, 'por_vector', f'{nombre_vector}.xlsx'), engine='xlsxwriter')
                 for valor_vector, huella in vector.items():
                     # Calcular reducción y huella per cápita
-                    reduccion = (area.huella - huella) / area.huella
+                    reduccion = ((area.huella - huella) / area.huella).fillna(0)
                     huella_capita = huella / poblacion
                     # Redondear valores cercanos a 0 a 0
                     huella = huella.apply(lambda x: 0 if abs(x) < 1e-8 else x)
@@ -92,6 +93,7 @@ def main(
                     sheetname = f'{nombre_vector}_{valor_vector}'
                     sheet = pd.DataFrame({
                         'ID': huella.index,
+                        'Barrio': nombre_barrios,
                         'Huella / tCO2e': huella,
                         'Reducción / %': reduccion,
                         'Huella/cápita / tCO2e': huella_capita

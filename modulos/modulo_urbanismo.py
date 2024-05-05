@@ -190,7 +190,7 @@ class AreaUrbanismo:
 
         # Almacenar captación
         self.captacion = captacion
-        self.huella = captacion
+        self.huella = -captacion
 
 
     def _get_caso_base(self):

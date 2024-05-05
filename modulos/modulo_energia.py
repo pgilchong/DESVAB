@@ -591,7 +591,7 @@ class AreaEnergia:
             consumo_electricidad * FACTOR_EMISION_MIX[escenario]) + (
             consumo_gas * FACTOR_EMISION_GAS)
         # Almacenar resultado
-        self.vector_v1[(mejora, escenario)] = huella.squeeze()
+        self.vector_v1[(mejora, escenario)] = huella
         # Devolver resultado
         return huella
     
