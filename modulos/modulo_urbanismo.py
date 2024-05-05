@@ -56,7 +56,7 @@ CAPTACION_CO2 = { # valores de captación de tCO2e / ha / año
 # ----------------------------------------------
 base_path = os.path.abspath(__file__)
 desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'data_final')
+data_path = os.path.join(desvab_root, 'datos')
 urbanismo_path = os.path.join(data_path, 'urbanismo')
 
 # Caso base

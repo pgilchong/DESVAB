@@ -64,11 +64,11 @@ from shapely.geometry import shape, Polygon, MultiPolygon
 # CONSTANTES
 # -------------------------------------------------
 # NOMBRES DE CARPETAS Y ARCHIVOS
-CARPETA_DATOS = 'input'
-CARPETA_ENERGIA = 'energy'
-CARPETA_GEO = 'geo_data'
+CARPETA_DATOS = 'datos'
+CARPETA_ENERGIA = 'energia'
+CARPETA_GEO = 'geo'
 CARPETA_MOVILIDAD = 'movilidad'
-ARCHIVO_CONSUMOS = 'consumos_electricos_cod_postal.csv'
+ARCHIVO_CONSUMOS = 'consumos_datadis.csv'
 ARCHIVO_POLIGONOS = 'códigos_postales.geojson'
 ARCHIVO_BARRIOS = 'barris-barrios.xlsx'
 ARCHIVO_CUADRANTES = 'contaminacion_trafico_2021.xlsx'
@@ -166,8 +166,8 @@ def get_barrios_ids() -> List[str]:
     poligonos_barrios['ID'] = (
         poligonos_barrios['Codigo distrito'].astype(str)) + '.' + (
         poligonos_barrios['Codigo barrio'].astype(str))
-    # Crear la lista de IDs
-    barrios_ids = poligonos_barrios['ID'].unique().tolist()
+    # Crear la lista de IDs, ordenada
+    barrios_ids = poligonos_barrios['ID'].sort_values().unique().tolist()
     # Devolver la lista de IDs de los barrios
     return barrios_ids
 

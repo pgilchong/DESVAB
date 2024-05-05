@@ -38,7 +38,7 @@ REDUCCION_SOSTENIBILIDAD = 0.69 # % de reducción de emisiones en viviendas sost
 # ----------------------------------------------
 base_path = os.path.abspath(__file__)
 desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'data_final')
+data_path = os.path.join(desvab_root, 'datos')
 vivienda_path = os.path.join(data_path, 'vivienda')
 
 # Caso base

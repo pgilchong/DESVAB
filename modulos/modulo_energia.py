@@ -57,7 +57,7 @@ EFICIENCIA_ELECTRIFICACION = 0.3 # %
 # ----------------------------------------------
 base_path = os.path.abspath(__file__)
 desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'data_final')
+data_path = os.path.join(desvab_root, 'datos')
 energia_path = os.path.join(data_path, 'energia')
 
 # Caso base
@@ -135,15 +135,15 @@ class AreaEnergia:
             self.get_vector_e3(reduccion, escenario)
         if verbose:
             print(f'Vector E3 calculado en {time.time() - start_time:.2f} s')
-
+        
         # Calcular vector V1 para valores dados
         if verbose:
             print('Calculando vector V1...')
             start_time = time.time()
         self._wrap_v1()
         self.vector_v1 = {}
-        for mejora in valores_v1:
-            self.get_vector_v1(mejora)
+        for mejora, escenario in product(valores_v1, FACTOR_EMISION_MIX.keys()):
+            self.get_vector_v1(mejora, escenario)
         if verbose:
             print(f'Vector V1 calculado en {time.time() - start_time:.2f} s')
 
@@ -326,7 +326,7 @@ class AreaEnergia:
 
         ### Ejecutar vector
         # Calcular consumos eléctricos con autoconsumo
-        consumos_electricos = (self.consumos_electricos['Total'] - self.potencial_pv * autoconsumo)
+        consumos_electricos = (self.consumos_electricos['Total'] - self.potencial_pv.sum(axis=1) * autoconsumo)
         # Fijar a 0 consumos negativos
         consumos_electricos = consumos_electricos.clip(lower=0)
         # Calcular huella de carbono
@@ -386,9 +386,9 @@ class AreaEnergia:
         
         ### Ejecutar vector
         # Calcular consumos de gas con reducción
-        consumos_gas = self.consumos_gas[['Residencial', 'Comercial']].sum() * (1 - reduccion) + self.consumos_gas['Industrial']
+        consumos_gas = self.consumos_gas[['Residencial', 'Comercial']].sum(axis=1) * (1 - reduccion) + self.consumos_gas['Industrial']
         # Calcular consumos eléctricos con reducción
-        consumos_electricos = self.consumos_electricos[['Residencial', 'Comercial']].sum() * (1 - reduccion) + self.consumos_electricos['Industrial']
+        consumos_electricos = self.consumos_electricos[['Residencial', 'Comercial']].sum(axis=1) * (1 - reduccion) + self.consumos_electricos['Industrial']
         # Calcular huella de carbono
         huella = (
             consumos_electricos * FACTOR_EMISION_MIX[escenario]) + (
@@ -555,7 +555,7 @@ class AreaEnergia:
         # Calcular porcentaje de certificados con letras E-G
         cert_EFG = self.certificados_consumo[
             self.certificados_consumo['Letra'].isin(['E', 'F', 'G'])
-            ].groupby(['ID', 'Letra']).sum(numeric_only=True)['Total Certificados']
+            ].groupby(['ID']).sum(numeric_only=True)['Total Certificados']
         
         # Calcular ahorro energético
         ahorro = self.consumo_calefaccion * cert_EFG * 0.51
@@ -573,7 +573,7 @@ class AreaEnergia:
         self._get_ahorro()
 
     
-    def get_vector_v1(self, mejora: float):
+    def get_vector_v1(self, mejora: float, escenario: str):
         """
         explicar método
         """
@@ -588,10 +588,10 @@ class AreaEnergia:
         consumo_electricidad = self.consumos_electricos['Total'] - self.potencial_ahorro_electricidad * mejora
         # Calcular huella de carbono
         huella = (
-            consumo_electricidad * FACTOR_EMISION_MIX['Actual']) + (
+            consumo_electricidad * FACTOR_EMISION_MIX[escenario]) + (
             consumo_gas * FACTOR_EMISION_GAS)
         # Almacenar resultado
-        self.vector_v1[mejora] = huella
+        self.vector_v1[(mejora, escenario)] = huella.squeeze()
         # Devolver resultado
         return huella
     

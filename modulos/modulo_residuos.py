@@ -68,7 +68,7 @@ FACTORES_EMISION = pd.DataFrame( # factores de emisión de CO2 por tratamiento d
 # ----------------------------------------------
 base_path = os.path.abspath(__file__)
 desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'data_final')
+data_path = os.path.join(desvab_root, 'datos')
 residuos_path = os.path.join(data_path, 'residuos')
 
 # Caso base
@@ -210,3 +210,8 @@ class AreaResiduos:
         explicar método
         """
         pass
+
+
+
+if __name__ == '__main__':
+    print(1 in [2,3,1])

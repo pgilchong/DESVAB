@@ -45,7 +45,7 @@ FACTOR_EMISION_MIX = { # factores de emisión de la red eléctrica
 # ----------------------------------------------
 base_path = os.path.abspath(__file__)
 desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'data_final')
+data_path = os.path.join(desvab_root, 'datos')
 movilidad_path = os.path.join(data_path, 'movilidad')
 
 excel_path = os.path.join(movilidad_path, 'contaminacion_trafico_2021.xlsx')

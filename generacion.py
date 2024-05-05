@@ -12,12 +12,12 @@ import sys
 import time
 
 # añadir el path a la carpeta "scripts_final" para importar los módulos
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts_final'))
-from area_energia import AreaEnergia
-from area_movilidad import AreaMovilidad
-from area_residuos import AreaResiduos
-from area_urbanismo import AreaUrbanismo
-from area_vivienda import AreaVivienda
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modulos'))
+from modulo_energia import AreaEnergia
+from modulo_movilidad import AreaMovilidad
+from modulo_residuos import AreaResiduos
+from modulo_urbanismo import AreaUrbanismo
+from modulo_vivienda import AreaVivienda
 
 
 # ----------------------------------------------
@@ -25,7 +25,7 @@ from area_vivienda import AreaVivienda
 # ----------------------------------------------
 base_path = os.path.abspath(__file__)
 desvab_root = os.path.dirname(base_path)
-data_path = os.path.join(desvab_root, 'data_final')
+data_path = os.path.join(desvab_root, 'datos')
 resultados_path = os.path.join(desvab_root, 'resultados')
 
 barrios_path = os.path.join(data_path, 'demografia', 'barrios.xlsx')
@@ -67,39 +67,38 @@ def main(
     for area in areas:
         for nombre_vector, vector in area.vectores.items():
             if nombre_vector not in ['U3', 'R1', 'R2']: # no implementados
-                continue
-            # Crear excel
-            writer = pd.ExcelWriter(os.path.join(resultados_path, f'{nombre_vector}.xlsx'), engine='xlsxwriter')
-            for valor_vector, huella in vector.items():
-                # Calcular reducción y huella per cápita
-                reduccion = (area.huella - huella) / area.huella
-                huella_capita = huella / poblacion
-                # Redondear valores cercanos a 0 a 0
-                huella = huella.apply(lambda x: 0 if abs(x) < 1e-6 else x)
-                reduccion = reduccion.apply(lambda x: 0 if abs(x) < 1e-6 else x)
-                huella_capita = huella_capita.apply(lambda x: 0 if abs(x) < 1e-6 else x)
-                # Crear registros para el DataFrame
-                df_concat = pd.DataFrame({
-                    'id': huella.index,
-                    'vector': nombre_vector,
-                    'valor_vector': valor_vector,
-                    'huella': huella,
-                    'reduccion': reduccion,
-                    'huella/capita': huella_capita
-                })
-                # Concatenar registros al DataFrame
-                df = pd.concat([df, df_concat])
-                # Escribir a excel
-                sheetname = f'{nombre_vector}_{valor_vector}'
-                sheet = pd.DataFrame({
-                    'ID': huella.index,
-                    'Huella / tCO2e': huella,
-                    'Reducción / %': reduccion,
-                    'Huella/cápita / tCO2e': huella_capita
-                })
-                sheet.to_excel(writer, sheet_name=sheetname, index=False)
-            # Guardar excel
-            writer.close()
+                # Crear excel
+                writer = pd.ExcelWriter(os.path.join(resultados_path, 'por_vector', f'{nombre_vector}.xlsx'), engine='xlsxwriter')
+                for valor_vector, huella in vector.items():
+                    # Calcular reducción y huella per cápita
+                    reduccion = (area.huella - huella) / area.huella
+                    huella_capita = huella / poblacion
+                    # Redondear valores cercanos a 0 a 0
+                    huella = huella.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+                    reduccion = reduccion.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+                    huella_capita = huella_capita.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+                    # Crear registros para el DataFrame
+                    df_concat = pd.DataFrame({
+                        'id': huella.index,
+                        'vector': nombre_vector,
+                        'valor_vector': str(valor_vector),
+                        'huella': huella,
+                        'reduccion': reduccion,
+                        'huella/capita': huella_capita
+                    })
+                    # Concatenar registros al DataFrame
+                    df = pd.concat([df, df_concat])
+                    # Escribir a excel
+                    sheetname = f'{nombre_vector}_{valor_vector}'
+                    sheet = pd.DataFrame({
+                        'ID': huella.index,
+                        'Huella / tCO2e': huella,
+                        'Reducción / %': reduccion,
+                        'Huella/cápita / tCO2e': huella_capita
+                    })
+                    sheet.to_excel(writer, sheet_name=sheetname, index=False)
+                # Guardar excel
+                writer.close()
     if verbose:
         print(f'Resultados combinados en {time.time() - start_time:.2f} s')
     
