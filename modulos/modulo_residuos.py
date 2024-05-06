@@ -212,6 +212,3 @@ class AreaResiduos:
         pass
 
 
-
-if __name__ == '__main__':
-    print(1 in [2,3,1])

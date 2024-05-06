@@ -155,7 +155,9 @@ class AreaMovilidad:
                         proportion = overlap_area / total_overlap_area
                         gdf_barrios.loc[neighborhood.name, cols] += fila[cols] * proportion * leftover_proportion
 
-            return gdf_barrios['CO2_real'], gdf_barrios['FE']
+            co2 = gdf_barrios['CO2_real'].groupby(gdf_barrios.index).sum()
+            fe = gdf_barrios['FE'].groupby(gdf_barrios.index).sum()
+            return co2, fe
         
 
         self.co2_base, self.fe_base = cargar_datos(0)
@@ -195,3 +197,5 @@ class AreaMovilidad:
 
         if verbose:
             print(f'Área Movilidad inicializada en {time.time() - start_time:.2f} s')
+
+
