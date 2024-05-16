@@ -7,10 +7,11 @@
 # MÓDULOS
 # ----------------------------------------------
 import geopandas as gpd
-import os
 import numpy as np
+import os
 import pandas as pd
 import time
+from math import e
 from typing import List
 
 
@@ -134,7 +135,7 @@ class AreaResiduos:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE CASO BASE
     # ----------------------------------------------
-    def _get_poblacion(self):
+    def _get_demografia(self):
         """
         explicar método
         """
@@ -144,14 +145,14 @@ class AreaResiduos:
 
         # Guardar datos
         self.poblacion = barrios['Población']
+        self.renta = barrios['Renta per cápita / €']
 
 
     def _get_betas(self):
         """
         explicar método
         """
-        self.betas = pd.Series(dtype=float)
-        pass
+        self.betas = 2.88 * 0.1 * e**(6 * 10**(-5) * self.renta)
 
 
     def _get_huella(self):
@@ -180,7 +181,7 @@ class AreaResiduos:
         explicar método
         wrapper
         """
-        self._get_poblacion()
+        self._get_demografia()
         self._get_betas()
         self._get_huella()
 

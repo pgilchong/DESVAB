@@ -17,8 +17,7 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-U2 = [0, .25, .5, .75, 1]
-U3 = [0, .25, .5]
+U1 = [0, .25, .5, .75, 1]
 
 
 # ----------------------------------------------
@@ -73,8 +72,7 @@ class AreaUrbanismo:
     """
     def __init__(
             self,
-            valores_u2: List[float] = U2,
-            #valores_u3: List[float] = U3,
+            valores_u1: List[float] = U1,
             verbose: bool = False
     ):
         """
@@ -89,20 +87,19 @@ class AreaUrbanismo:
         if verbose:
             print(f'Caso base calculado en {time.time() - start_time:.2f} s')
 
-        # Calcular vector U2 para valores dados
+        # Calcular vector U1 para valores dados
         if verbose:
-            print('Calculando vector U2...')
+            print('Calculando vector U1...')
             start_time = time.time()
-        self.vector_u2 = {}
-        for suelo_a_parque in valores_u2:
-            self.get_vector_u2(suelo_a_parque)
+        self.vector_u1 = {}
+        for suelo_a_parque in valores_u1:
+            self.get_vector_u1(suelo_a_parque)
         if verbose:
-            print(f'Vector U2 calculado en {time.time() - start_time:.2f} s')
+            print(f'Vector U1 calculado en {time.time() - start_time:.2f} s')
         
         # Guardar vectores en atributo vectores
         self.vectores = {
-            'U2': self.vector_u2,
-            #'U3': self.vector_u3
+            'U1': self.vector_u1
         }
 
         if verbose:
@@ -205,9 +202,9 @@ class AreaUrbanismo:
 
     
     # ----------------------------------------------
-    # MÉTODOS PARA CÁLCULO DE VECTOR U2, AUMENTO DE PARQUE URBANO
+    # MÉTODOS PARA CÁLCULO DE VECTOR U1, AUMENTO DE PARQUE URBANO
     # ----------------------------------------------
-    def get_vector_u2(self, suelo_a_parque: float):
+    def get_vector_u1(self, suelo_a_parque: float):
         """
         explicar método
         """
@@ -235,7 +232,7 @@ class AreaUrbanismo:
         captacion = captacion.sum(axis=1)
 
         # Almacenar resultado
-        self.vector_u2[suelo_a_parque] = captacion
+        self.vector_u1[suelo_a_parque] = captacion
 
         # Devolver resultado
         return captacion

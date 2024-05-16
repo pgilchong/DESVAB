@@ -67,7 +67,7 @@ def main(
     areas = [energia, vivienda, movilidad, urbanismo, residuos]
     for area in areas:
         for nombre_vector, vector in area.vectores.items():
-            if nombre_vector not in ['U3', 'R1', 'R2']: # no implementados
+            if nombre_vector not in ['R2']: # no implementados
                 # Crear excel
                 writer = pd.ExcelWriter(os.path.join(resultados_path, 'por_vector', f'{nombre_vector}.xlsx'), engine='xlsxwriter')
                 for valor_vector, huella in vector.items():
@@ -109,7 +109,11 @@ def main(
         print('Guardando resultados...')
         start_time = time.time()
     csv_path = os.path.join(resultados_path, 'resultados.csv')
-    df.to_csv(csv_path, index=False)
+    df.to_csv(csv_path, index=False)ç
+    json_path = os.path.join(resultados_path, 'resultados.json')
+    json_file = df.to_json(orient='table')
+    with open(json_path, 'w') as f:
+        f.write(json_file)
     if verbose:
         print(f'Resultados guardados en {time.time() - start_time:.2f} s')
 

@@ -16,7 +16,7 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-V2 = [.002, .001, 0] # construcción de nuevas viviendas, %
+V2 = [.002, .0015, .001, .0005, 0] # construcción de nuevas viviendas, %
 V3 = [0, .25, .5, .75, 1] # nuevas viviendas sostenibles, %
 
 

@@ -71,7 +71,7 @@ CARPETA_MOVILIDAD = 'movilidad'
 ARCHIVO_CONSUMOS = 'consumos_datadis.csv'
 ARCHIVO_POLIGONOS = 'codigos_postales.geojson'
 ARCHIVO_BARRIOS = 'barris-barrios.xlsx'
-ARCHIVO_CUADRANTES = 'contaminacion_trafico_2021.xlsx'
+ARCHIVO_CUADRANTES = 'contaminacion_trafico_2021_v3.xlsx'
 ARCHIVO_CENSALES = 'seccions-censals-secciones-censales.xlsx'
 ARCHIVO_DISTRITOS = 'districtes-distritos.json'
 
