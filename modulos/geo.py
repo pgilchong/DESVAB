@@ -572,3 +572,4 @@ def get_poligonos_distritos_(
     
     # Devolver el GeoDataFrame con los polígonos de cada distrito
     return poligonos_distritos_gdf
+

@@ -236,3 +236,5 @@ class AreaUrbanismo:
 
         # Devolver resultado
         return captacion
+    
+    
