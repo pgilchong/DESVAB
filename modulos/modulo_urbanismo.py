@@ -235,6 +235,6 @@ class AreaUrbanismo:
         self.vector_u1[suelo_a_parque] = captacion
 
         # Devolver resultado
-        return captacion
+        return -captacion
     
     
