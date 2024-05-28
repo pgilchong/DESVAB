@@ -18,10 +18,10 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-E1 = [0, .25, .5, .75, 1] # autoconsumo, %
-E2 = [0, .25, .5, .75, 1] # electrificación, %
-E3 = [0, .04, .08, .12, .16] # reducción de consumo, %
-V1 = [0, .25, .5, .75, 1] # mejora parque edificios E-G, %
+E1 = [0, .25, .5, .75, 1] # autoconsumo, proporción
+E2 = [0, .25, .5, .75, 1] # electrificación, proporción
+E3 = [0, .04, .08, .12, .16] # reducción de consumo, proporción
+V1 = [0, .25, .5, .75, 1] # mejora parque edificios E-G, proporción
 
 
 # ----------------------------------------------
@@ -45,11 +45,16 @@ FACTOR_EMISION_MIX = { # factores de emisión de la red eléctrica
 FACTOR_EMISION_GAS = 0.18 # tCO2e/MWh
 
 # Vector E1
-EFICIENCIA_PANELES_SOLARES = 0.224 # %
-RENDIMIENTO_INSTALACIONES_SOLARES = 0.86 # %
+EFICIENCIA_PANELES_SOLARES = 0.224 # proporción
+RENDIMIENTO_INSTALACIONES_SOLARES = 0.86 # proporción
 
 # Vector E2
-EFICIENCIA_ELECTRIFICACION = 0.3 # %
+EFICIENCIA_ELECTRIFICACION = 0.3 # proporción
+
+# Vector V1
+REDUCCION_DEMANDA_REHABILITACION = 0.51 # proporción
+CALEFACCION_SATISFECHA_GAS = 0.27 # proporción
+CALEFACCION_SATISFECHA_ELECTRICIDAD = 0.14 # proporción
 
 
 # ----------------------------------------------
@@ -555,12 +560,14 @@ class AreaEnergia:
         # Calcular porcentaje de certificados con letras E-G
         cert_EFG = self.certificados_consumo[
             self.certificados_consumo['Letra'].isin(['E', 'F', 'G'])
-            ].groupby(['ID']).sum(numeric_only=True)['Total Certificados']
+            ].groupby(['ID']).sum(numeric_only=True)['Total Certificados'] / (
+                self.certificados_consumo.groupby(['ID']).sum(numeric_only=True)['Total Certificados']
+            )
         
         # Calcular ahorro energético
-        ahorro = self.consumo_calefaccion * cert_EFG * 0.51
-        self.potencial_ahorro_gas = ahorro * 0.27
-        self.potencial_ahorro_electricidad = ahorro * 0.14
+        ahorro = self.consumo_calefaccion * cert_EFG * REDUCCION_DEMANDA_REHABILITACION
+        self.potencial_ahorro_gas = ahorro * CALEFACCION_SATISFECHA_GAS
+        self.potencial_ahorro_electricidad = ahorro * CALEFACCION_SATISFECHA_ELECTRICIDAD
 
     
     def _wrap_v1(self):
@@ -581,6 +588,9 @@ class AreaEnergia:
         # Comprobar que la mejora está entre 0 y 1
         if mejora < 0 or mejora > 1:
             raise ValueError('La mejora debe ser un valor entre 0 y 1.')
+        # Comprobar que el escenario es uno de los valores válidos
+        if escenario not in FACTOR_EMISION_MIX.keys():
+            raise ValueError('El escenario debe ser uno de los valores válidos.')
         
         ### Ejecutar vector
         # Calcular consumo energético

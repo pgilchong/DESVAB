@@ -18,8 +18,8 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-R1 = [0, .1, .2, .3, .4]
-R2 = [0, .39, .49, .59, .69]
+R1 = [0, .1, .2, .3, .4] # reducción de residuos generados, proporción
+R2 = [0, .25, .5, .75, 1] # aumento de reciclaje hasta estándar ue, proporción
 
 
 # ----------------------------------------------
@@ -60,8 +60,6 @@ FACTORES_EMISION = pd.DataFrame( # factores de emisión de CO2 por tratamiento d
     index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
     columns = ['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
 )
-
-# Vector R1
 
 
 # ----------------------------------------------

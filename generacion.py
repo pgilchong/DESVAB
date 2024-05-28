@@ -136,7 +136,7 @@ def main(
             sheet = pd.merge(sheet, columnas, on='ID.', how='left')
         if letra == 'V':
             fila_aclaracion = {col: '' for col in sheet.columns}
-            fila_aclaracion['ID.'] = '*Nota: el vector V1 se ha calculado a partir del caso base de Vivienda.'
+            fila_aclaracion['ID.'] = '*Nota: el vector V1 se ha calculado a partir del caso base de Energía.'
             sheet = pd.concat([sheet, pd.DataFrame(fila_aclaracion, index=[0])], ignore_index=True)
         if letra == 'U':
             fila_aclaracion = {col: '' for col in sheet.columns}
