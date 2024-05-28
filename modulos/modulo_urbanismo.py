@@ -230,11 +230,12 @@ class AreaUrbanismo:
             areas.loc[barrios_citricos, 'l3'] * CAPTACION_CO2['l3']['cítricos'] / 10000
         )
         captacion = captacion.sum(axis=1)
+        huella = -captacion
 
         # Almacenar resultado
-        self.vector_u1[suelo_a_parque] = captacion
+        self.vector_u1[suelo_a_parque] = huella
 
         # Devolver resultado
-        return -captacion
+        return huella
     
     

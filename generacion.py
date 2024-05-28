@@ -66,7 +66,7 @@ def main(
     # Crear excel de resultados por área
     writer_a = pd.ExcelWriter(os.path.join(resultados_path, 'resultados.xlsx'), engine='xlsxwriter')
     # Iterar sobre áreas y vectores
-    areas = [energia, vivienda, movilidad, urbanismo, residuos]
+    areas = [energia, vivienda, urbanismo, movilidad, residuos]
     sheets_a = {
         'E': {},
         'V': {},
@@ -132,6 +132,12 @@ def main(
     for letra, combinacion in sheets_a.items():
         sheetname = {'E': 'Energía', 'V': 'Vivienda', 'M': 'Movilidad', 'U': 'Urbanismo', 'R': 'Residuos'}[letra]
         sheet = sheet_base.copy()
+        # añadir caso base
+        area = {'E': energia, 'V': vivienda, 'M': movilidad, 'U': urbanismo, 'R': residuos}[letra]
+        huella = area.huella.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+        huella_capita = huella / poblacion.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+        sheet['Base. Huella / tCO2e'] = huella
+        sheet['Base. Huella/cápita / tCO2e'] = huella_capita
         for (nombre_vector, valor_vector), columnas in combinacion.items():
             sheet = pd.merge(sheet, columnas, on='ID.', how='left')
         if letra == 'V':
