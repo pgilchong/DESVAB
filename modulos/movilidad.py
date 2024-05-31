@@ -33,12 +33,15 @@ U2 = [0, .05, .1, .15, .2]
 # Caso base
 
 
-# Vector M1
+# Vectores M1 y M2
 FACTOR_EMISION_MIX = { # factores de emisión de la red eléctrica
     'Actual': 0.12, # tCO2e/MWh
     'PNIEC': 0.068, # tCO2e/MWh
     'Borrador PNIEC': 0.03 # tCO2e/MWh
 }
+
+# Vector U2
+MAXIMO_U2 = 0.2
 
 
 # ----------------------------------------------
@@ -188,9 +191,9 @@ class AreaMovilidad:
                 self.vector_m3[(valor, 'PNIEC')] = co2 + fe * FACTOR_EMISION_MIX['PNIEC']
                 self.vector_m3[(valor, 'Borrador PNIEC')] = co2 + fe * FACTOR_EMISION_MIX['Borrador PNIEC']
             elif vector == 'U2':
-                self.vector_u2[(valor, 'Actual')] = co2 + fe * FACTOR_EMISION_MIX['Actual']
-                self.vector_u2[(valor, 'PNIEC')] = co2 + fe * FACTOR_EMISION_MIX['PNIEC']
-                self.vector_u2[(valor, 'Borrador PNIEC')] = co2 + fe * FACTOR_EMISION_MIX['Borrador PNIEC']
+                self.vector_u2[(valor / MAXIMO_U2, 'Actual')] = co2 + fe * FACTOR_EMISION_MIX['Actual']
+                self.vector_u2[(valor / MAXIMO_U2, 'PNIEC')] = co2 + fe * FACTOR_EMISION_MIX['PNIEC']
+                self.vector_u2[(valor / MAXIMO_U2, 'Borrador PNIEC')] = co2 + fe * FACTOR_EMISION_MIX['Borrador PNIEC']
             if verbose: print(f'Valor {valor} para {vector} calculado.')
 
         # Guardar vectores en atributo vectores
@@ -203,5 +206,4 @@ class AreaMovilidad:
 
         if verbose:
             print(f'Área Movilidad inicializada en {time.time() - start_time:.2f} s')
-
 

@@ -1,6 +1,8 @@
 
 """
-explicar módulo
+Este módulo se encarga de ejecutar los cálculos a partir de los módulos de las áreas.
+Se inicializan las áreas, cargando los datos y calculando los vectores.
+Se combinan los resultados en un solo DataFrame y se guardan en archivos CSV, JSON y Excel.
 """
 
 # ----------------------------------------------
@@ -13,22 +15,22 @@ import time
 
 # añadir el path a la carpeta "scripts_final" para importar los módulos
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modulos'))
-from modulo_energia import AreaEnergia
-from modulo_movilidad import AreaMovilidad
-from modulo_residuos import AreaResiduos
-from modulo_urbanismo import AreaUrbanismo
-from modulo_vivienda import AreaVivienda
+from energia import AreaEnergia
+from movilidad import AreaMovilidad
+from residuos import AreaResiduos
+from urbanismo import AreaUrbanismo
+from vivienda import AreaVivienda
 
 
 # ----------------------------------------------
 # RUTAS Y NOMBRES DE ARCHIVOS
 # ----------------------------------------------
-base_path = os.path.abspath(__file__)
-desvab_root = os.path.dirname(base_path)
-data_path = os.path.join(desvab_root, 'datos')
-resultados_path = os.path.join(desvab_root, 'resultados')
+base_path = os.path.abspath(__file__) # Path: generacion.py
+desvab_root = os.path.dirname(base_path) # Path: desvab
+data_path = os.path.join(desvab_root, 'datos') # Path: desvab/datos
+resultados_path = os.path.join(desvab_root, 'resultados') # Path: desvab/resultados
 
-barrios_path = os.path.join(data_path, 'demografia', 'barrios.xlsx')
+barrios_path = os.path.join(data_path, 'demografia', 'barrios.xlsx') # Path: desvab/datos/demografia/barrios.xlsx
 
 
 # ----------------------------------------------
@@ -76,49 +78,51 @@ def main(
     }
     for area in areas:
         for nombre_vector, vector in area.vectores.items():
-            if nombre_vector not in ['R2']: # no implementados
-                # Crear excel
-                writer_v = pd.ExcelWriter(os.path.join(resultados_path, 'por_vector', f'{nombre_vector}.xlsx'), engine='xlsxwriter')
-                for valor_vector, huella in vector.items():
-                    # Calcular reducción y huella per cápita
-                    reduccion = ((area.huella - huella) / area.huella).fillna(0)
-                    huella_capita = huella / poblacion
-                    # Redondear a 0 valores cercanos a 0
-                    huella = huella.apply(lambda x: 0 if abs(x) < 1e-8 else x)
-                    reduccion = reduccion.apply(lambda x: 0 if abs(x) < 1e-8 else x)
-                    huella_capita = huella_capita.apply(lambda x: 0 if abs(x) < 1e-8 else x)
-                    # Crear registros para el DataFrame
-                    df_concat = pd.DataFrame({
-                        'id': huella.index,
-                        'vector': nombre_vector,
-                        'valor_vector': str(valor_vector),
-                        'huella': huella,
-                        'reduccion': reduccion,
-                        'huella/capita': huella_capita
-                    })
-                    # Concatenar registros al DataFrame
-                    df = pd.concat([df, df_concat])
-                    # Guardar para excel de áreas
-                    nombre_vector_a = '*'+nombre_vector if nombre_vector in ['V1', 'U2'] else nombre_vector
-                    valor_vector_a = ', Mix Red '.join([str(v) for v in valor_vector]) if type(valor_vector) == tuple else valor_vector
-                    sheets_a[nombre_vector[0]][(nombre_vector, valor_vector_a)] = pd.DataFrame({
-                        'ID.': huella.index,
-                        f'{nombre_vector_a}, {valor_vector_a}. Huella / tCO2e': huella,
-                        f'{nombre_vector_a}, {valor_vector_a}. Reducción / %': reduccion,
-                        f'{nombre_vector_a}, {valor_vector_a}. Huella/cápita / tCO2e': huella_capita
-                    })
-                    # Escribir a excel de vector
-                    sheetname_v = f'{nombre_vector}_{valor_vector}'
-                    sheet_v = pd.DataFrame({
-                        'ID': huella.index,
-                        'Barrio': nombre_barrios,
-                        'Huella / tCO2e': huella,
-                        'Reducción / %': reduccion,
-                        'Huella/cápita / tCO2e': huella_capita
-                    })
-                    sheet_v.to_excel(writer_v, sheet_name=sheetname_v, index=False)
-                # Guardar excel de vector
-                writer_v.close()
+            # Crear excel
+            writer_v = pd.ExcelWriter(os.path.join(resultados_path, 'por_vector', f'{nombre_vector}.xlsx'), engine='xlsxwriter')
+            for valor_vector, huella in vector.items():
+                # Formato a valor_vector
+                if type(valor_vector) == tuple:
+                    valor_vector = (str(round(valor_vector[0]*100))+'%', valor_vector[1])
+                # Calcular reducción y huella per cápita
+                reduccion = area.huella - huella
+                huella_capita = huella / poblacion
+                # Redondear a 0 valores cercanos a 0
+                huella = huella.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+                reduccion = reduccion.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+                huella_capita = huella_capita.apply(lambda x: 0 if abs(x) < 1e-8 else x)
+                # Crear registros para el DataFrame
+                df_concat = pd.DataFrame({
+                    'id': huella.index,
+                    'vector': nombre_vector,
+                    'valor_vector': str(valor_vector),
+                    'huella': huella,
+                    'reduccion': reduccion,
+                    'huella/capita': huella_capita
+                })
+                # Concatenar registros al DataFrame
+                df = pd.concat([df, df_concat])
+                # Guardar para excel de áreas
+                nombre_vector_a = '*'+nombre_vector if nombre_vector in ['V1', 'U2'] else nombre_vector
+                valor_vector_a = ', Mix Red '.join([str(v) for v in valor_vector]) if type(valor_vector) == tuple else valor_vector
+                sheets_a[nombre_vector[0]][(nombre_vector, valor_vector_a)] = pd.DataFrame({
+                    'ID.': huella.index,
+                    f'{nombre_vector_a}, {valor_vector_a}. Huella / tCO2e': huella,
+                    f'{nombre_vector_a}, {valor_vector_a}. Reducción / %': reduccion,
+                    f'{nombre_vector_a}, {valor_vector_a}. Huella/cápita / tCO2e': huella_capita
+                })
+                # Escribir a excel de vector
+                sheetname_v = f'{nombre_vector}_{valor_vector}'
+                sheet_v = pd.DataFrame({
+                    'ID': huella.index,
+                    'Barrio': nombre_barrios,
+                    'Huella / tCO2e': huella,
+                    'Reducción / %': reduccion,
+                    'Huella/cápita / tCO2e': huella_capita
+                })
+                sheet_v.to_excel(writer_v, sheet_name=sheetname_v, index=False)
+            # Guardar excel de vector
+            writer_v.close()
 
     # Guardar resultados, excel
     if verbose:

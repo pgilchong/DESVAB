@@ -16,7 +16,7 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-V2 = [.002, .0015, .001, .0005, 0] # construcción de nuevas viviendas, proporción
+V2 = [0, .25, .5, .75, 1] # construcción de nuevas viviendas, proporción
 V3 = [0, .25, .5, .75, 1] # nuevas viviendas sostenibles, proporción
 
 
@@ -150,7 +150,7 @@ class AreaVivienda:
         explicar método
         """
         # Calcular huella de carbono para valor de construcción
-        viviendas_nuevas = self.viviendas_nuevas * (construccion*100 / CONSTRUCCION_ANUAL_PCT)
+        viviendas_nuevas = self.viviendas_nuevas * CONSTRUCCION_ANUAL_PCT * (1 - construccion)
         huella = viviendas_nuevas * SUPERFICIE_PROMEDIO * EMISIONES_NUEVA_CONSTRUCCION
         # Almacenar resultado
         self.vector_v2[construccion] = huella

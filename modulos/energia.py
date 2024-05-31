@@ -20,7 +20,7 @@ from typing import List
 # ----------------------------------------------
 E1 = [0, .25, .5, .75, 1] # autoconsumo, proporción
 E2 = [0, .25, .5, .75, 1] # electrificación, proporción
-E3 = [0, .04, .08, .12, .16] # reducción de consumo, proporción
+E3 = [0, .25, .5, .75, 1] # reducción de consumo, proporción
 V1 = [0, .25, .5, .75, 1] # mejora parque edificios E-G, proporción
 
 
@@ -50,6 +50,9 @@ RENDIMIENTO_INSTALACIONES_SOLARES = 0.86 # proporción
 
 # Vector E2
 EFICIENCIA_ELECTRIFICACION = 0.3 # proporción
+
+# Vector E3
+MAXIMO_E3 = 0.16 # proporción
 
 # Vector V1
 REDUCCION_DEMANDA_REHABILITACION = 0.51 # proporción
@@ -391,9 +394,9 @@ class AreaEnergia:
         
         ### Ejecutar vector
         # Calcular consumos de gas con reducción
-        consumos_gas = self.consumos_gas[['Residencial', 'Comercial']].sum(axis=1) * (1 - reduccion) + self.consumos_gas['Industrial']
+        consumos_gas = self.consumos_gas[['Residencial', 'Comercial']].sum(axis=1) * (1 - reduccion * MAXIMO_E3) + self.consumos_gas['Industrial']
         # Calcular consumos eléctricos con reducción
-        consumos_electricos = self.consumos_electricos[['Residencial', 'Comercial']].sum(axis=1) * (1 - reduccion) + self.consumos_electricos['Industrial']
+        consumos_electricos = self.consumos_electricos[['Residencial', 'Comercial']].sum(axis=1) * (1 - reduccion * MAXIMO_E3) + self.consumos_electricos['Industrial']
         # Calcular huella de carbono
         huella = (
             consumos_electricos * FACTOR_EMISION_MIX[escenario]) + (

@@ -18,8 +18,8 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-R1 = [0, .1, .2, .3, .4] # reducción de residuos generados, proporción
-R2 = [0, .25, .5, .75, 1] # aumento de reciclaje hasta estándar ue, proporción
+R1 = [0, .25, .5, .75, 1] # reducción de residuos generados, proporción
+R2 = [0, .25, .5, .75, 1] # aumento de reciclaje desde caso base hasta estándar ue, proporción
 
 
 # ----------------------------------------------
@@ -43,23 +43,67 @@ RESIDUOS_PROP = {
 }
 RESIDUOS_HAB = {k: v / 1000 for k, v in RESIDUOS_HAB.items()} # pasar a t/hab/año
 TRATAMIENTO = pd.DataFrame( # % de residuos tratados por tipo de residuo y tratamiento
-    [[0.00, 0.60, 0.30, 0.10],
-     [0.00, 0.18, 0.67, 0.15],
-     [0.71, 0.00, 0.27, 0.02],
-     [1.00, 0.00, 0.00, 0.00],
-     [1.00, 0.00, 0.00, 0.00]],
+    [[0.08, 0.1 , 0.67, 0.15],
+     [0.6 , 0.  , 0.3 , 0.1 ],
+     [0.  , 0.71, 0.27, 0.02],
+     [0.  , 0.6 , 0.4 , 0.  ],
+     [0.  , 0.68, 0.16, 0.16]],
     index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
-    columns = ['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
+    columns=['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
 )
 FACTORES_EMISION = pd.DataFrame( # factores de emisión de CO2 por tratamiento de residuos, tCO2e/t
-    [[np.nan, 0.17, 0.58, 0.05],
-     [np.nan, 0.17, 0.52, 0.43],
+    [[0.17, 0.17, 0.58, 0.05],
+     [0.05, 0.17, 0.52, 0.43],
      [0.22, np.nan, 0.02, 2.38],
-     [0.07, np.nan, np.nan, np.nan],
-     [0.05, np.nan, np.nan, np.nan]],
+     [0.07, np.nan, 0.89, 0.05],
+     [0.05, np.nan, 0.02, 0.01]],
     index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
-    columns = ['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
+    columns=['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
 )
+
+# Vector R1
+MAXIMO_R1 = 0.4 # reducción máxima de residuos generados, proporción
+
+# Vector R2
+ESCENARIOS_R2 = {
+    0: TRATAMIENTO,
+    .25: pd.DataFrame( # % de residuos tratados por tipo de residuo y tratamiento
+        [[0.12, 0.22, 0.51, 0.15],
+         [0.6 , 0.  , 0.3 , 0.1 ],
+         [0.  , 0.75, 0.23, 0.02],
+         [0.  , 0.67, 0.33, 0.  ],
+         [0.  , 0.75, 0.09, 0.16]],
+        index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
+        columns=['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
+    ),
+    .5: pd.DataFrame( # % de residuos tratados por tipo de residuo y tratamiento
+        [[0.12, 0.38, 0.35, 0.15],
+         [0.6 , 0.  , 0.3 , 0.1 ],
+         [0.  , 0.8 , 0.18, 0.02],
+         [0.77, 0.23, 0.  , 0.  ],
+         [0.8 , 0.04, 0.16, 0.  ]],
+        index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
+        columns=['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
+    ),
+    .75: pd.DataFrame( # % de residuos tratados por tipo de residuo y tratamiento
+        [[0.12, 0.51, 0.22, 0.15],
+         [0.6 , 0.  , 0.3 , 0.1 ],
+         [0.  , 0.85, 0.13, 0.02],
+         [0.85, 0.15, 0.  , 0.  ],
+         [0.85, 0.  , 0.15, 0.  ]],
+        index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
+        columns=['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
+    ),
+    1: pd.DataFrame( # % de residuos tratados por tipo de residuo y tratamiento
+        [[0.12, 0.65, 0.08, 0.15],
+         [0.6 , 0.  , 0.3 , 0.1 ],
+         [0.  , 0.99, 0.  , 0.01],
+         [0.99, 0.01, 0.  , 0.  ],
+         [0.99, 0.  , 0.01, 0.  ]],
+        index=['FORS', 'Resto', 'Envases', 'Papel y cartón', 'Vidrio'],
+        columns=['Reciclaje', 'Compostaje', 'Vertido', 'Incineración']
+    )
+}
 
 
 # ----------------------------------------------
@@ -192,7 +236,7 @@ class AreaResiduos:
         explicar método
         """
         # Calcular huella de carbono reducida
-        huella = self.huella * (1 - reduccion)
+        huella = self.huella * (1 - reduccion * MAXIMO_R1)
 
         # Almacenar resultado
         self.vector_r1[reduccion] = huella
@@ -208,5 +252,21 @@ class AreaResiduos:
         """
         explicar método
         """
-        pass
+        # Recalcular huella con tabla de tratamiento pertinente
+        huella_av = 0
+        for r in RESIDUOS_HAB:
+            for t in ESCENARIOS_R2[reciclado].columns:
+                # Si el tratamiento existe para el residuo, sumar a la huella
+                if not np.isnan(FACTORES_EMISION.loc[r, t]):
+                    huella_av += ESCENARIOS_R2[reciclado].loc[r, t] * RESIDUOS_HAB[r] * FACTORES_EMISION.loc[r, t]
 
+        # Calcular huella de carbono por barrio
+        huella = huella_av * self.poblacion * self.betas
+
+        # Almacenar resultado
+        self.vector_r2[reciclado] = huella
+
+        # Devolver resultado
+        return huella
+    
+    
