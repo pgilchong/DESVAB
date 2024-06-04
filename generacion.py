@@ -108,7 +108,7 @@ def main(
                 sheets_a[nombre_vector[0]][(nombre_vector, valor_vector_a)] = pd.DataFrame({
                     'ID.': huella.index,
                     f'{nombre_vector_a}, {valor_vector_a}. Huella / tCO2e': huella,
-                    f'{nombre_vector_a}, {valor_vector_a}. Reducción / %': reduccion,
+                    f'{nombre_vector_a}, {valor_vector_a}. Reducción / tCO2e': reduccion,
                     f'{nombre_vector_a}, {valor_vector_a}. Huella/cápita / tCO2e': huella_capita
                 })
                 # Escribir a excel de vector
@@ -117,7 +117,7 @@ def main(
                     'ID': huella.index,
                     'Barrio': nombre_barrios,
                     'Huella / tCO2e': huella,
-                    'Reducción / %': reduccion,
+                    'Reducción / tCO2e': reduccion,
                     'Huella/cápita / tCO2e': huella_capita
                 })
                 sheet_v.to_excel(writer_v, sheet_name=sheetname_v, index=False)
@@ -133,6 +133,10 @@ def main(
         'Barrio': nombre_barrios,
         'Población': poblacion,
     })
+    sheet = sheet_base.copy()
+    sheet['Base. Huella / tCO2e'] = energia.huella + vivienda.huella + movilidad.huella + urbanismo.huella + residuos.huella
+    sheet['Base. Huella/cápita / tCO2e'] = sheet['Base. Huella / tCO2e'] / poblacion
+    sheet.to_excel(writer_a, sheet_name='General', index=False)
     for letra, combinacion in sheets_a.items():
         sheetname = {'E': 'Energía', 'V': 'Vivienda', 'M': 'Movilidad', 'U': 'Urbanismo', 'R': 'Residuos'}[letra]
         sheet = sheet_base.copy()
@@ -146,7 +150,7 @@ def main(
             sheet = pd.merge(sheet, columnas, on='ID.', how='left')
         if letra == 'V':
             fila_aclaracion = {col: '' for col in sheet.columns}
-            fila_aclaracion['ID.'] = '*Nota: el vector V1 se ha calculado a partir del caso base de Energía.'
+            fila_aclaracion['ID.'] = '*Nota: el vector V3 se ha calculado a partir del caso base de Energía.'
             sheet = pd.concat([sheet, pd.DataFrame(fila_aclaracion, index=[0])], ignore_index=True)
         if letra == 'U':
             fila_aclaracion = {col: '' for col in sheet.columns}

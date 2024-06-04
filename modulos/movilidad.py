@@ -96,9 +96,9 @@ class AreaMovilidad:
                     sheet_name, usecols=['num_cuadrante', 'CO2_real_kg', 'publico_kWh', 'privado_kWh'],
                     index_col='num_cuadrante'
                     )
-            df_cuad['CO2_real_kg'] = df_cuad['CO2_real_kg'] / (10**3)  # Convertir a toneladas desde kg
+            df_cuad['CO2_real_kg'] = df_cuad['CO2_real_kg'] / (10**6)  # Convertir a toneladas desde g, datos pone kg pero son g
             df_cuad['FE'] = df_cuad['publico_kWh'] + df_cuad['privado_kWh'] # Sumar kWh de públicos y privados
-            df_cuad['FE'] = df_cuad['FE'] / (10**3)  # Convertir a MWh
+            df_cuad['FE'] = df_cuad['FE'] / (10**6)  # Convertir a MWh
             df_cuad = df_cuad.drop(columns=['publico_kWh', 'privado_kWh'])
             cols = ['CO2_real_kg', 'FE']
             df_barrios = pd.DataFrame(0, index=matriz_overlap.columns, columns=df_cuad.columns)

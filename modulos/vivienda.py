@@ -16,8 +16,8 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-V2 = [0, .25, .5, .75, 1] # construcción de nuevas viviendas, proporción
-V3 = [0, .25, .5, .75, 1] # nuevas viviendas sostenibles, proporción
+V1 = [0, .25, .5, .75, 1] # construcción de nuevas viviendas, proporción
+V2 = [0, .25, .5, .75, 1] # nuevas viviendas sostenibles, proporción
 
 
 # ----------------------------------------------
@@ -29,7 +29,7 @@ CONSTRUCCION_ANUAL_PCT = 0.2 # % de viviendas nuevas al año
 SUPERFICIE_PROMEDIO = 90 # m2
 EMISIONES_NUEVA_CONSTRUCCION = 0.06458 # tCO2e/m2
 
-# Vector V3
+# Vector V2
 REDUCCION_SOSTENIBILIDAD = 0.69 # % de reducción de emisiones en viviendas sostenibles
 
 
@@ -54,8 +54,8 @@ class AreaVivienda:
     """
     def __init__(
             self,
+            valores_v1: List[float] = V1,
             valores_v2: List[float] = V2,
-            valores_v3: List[float] = V3,
             verbose: bool = False
             ):
         """
@@ -70,30 +70,30 @@ class AreaVivienda:
         if verbose:
             print(f'Caso base calculado en {time.time() - start_time:.2f} s')
 
+        # Calcular vector V1 para valores dados
+        if verbose:
+            print('Calculando vector V1...')
+            start_time = time.time()
+        self.vector_v1 = {}
+        for construccion in valores_v1:
+            self.get_vector_v1(construccion)
+        if verbose:
+            print(f'Vector V1 calculado en {time.time() - start_time:.2f} s')
+
         # Calcular vector V2 para valores dados
         if verbose:
             print('Calculando vector V2...')
             start_time = time.time()
         self.vector_v2 = {}
-        for construccion in valores_v2:
-            self.get_vector_v2(construccion)
+        for nuevas_sostenibles in valores_v2:
+            self.get_vector_v2(nuevas_sostenibles)
         if verbose:
             print(f'Vector V2 calculado en {time.time() - start_time:.2f} s')
 
-        # Calcular vector V3 para valores dados
-        if verbose:
-            print('Calculando vector V3...')
-            start_time = time.time()
-        self.vector_v3 = {}
-        for nuevas_sostenibles in valores_v3:
-            self.get_vector_v3(nuevas_sostenibles)
-        if verbose:
-            print(f'Vector V3 calculado en {time.time() - start_time:.2f} s')
-
         # Guardar vectores en atributo vectores
         self.vectores = {
-            'V2': self.vector_v2,
-            'V3': self.vector_v3
+            'V1': self.vector_v1,
+            'V2': self.vector_v2
         }
 
         if verbose:
@@ -143,9 +143,9 @@ class AreaVivienda:
 
 
     # ----------------------------------------------
-    # MÉTODOS PARA CÁLCULO DE VECTOR V2, REDUCCIÓN DE NUEVA CONSTRUCCIÓN
+    # MÉTODOS PARA CÁLCULO DE VECTOR V1, REDUCCIÓN DE NUEVA CONSTRUCCIÓN
     # ----------------------------------------------
-    def get_vector_v2(self, construccion: float):
+    def get_vector_v1(self, construccion: float):
         """
         explicar método
         """
@@ -153,22 +153,22 @@ class AreaVivienda:
         viviendas_nuevas = self.viviendas_nuevas * CONSTRUCCION_ANUAL_PCT * (1 - construccion)
         huella = viviendas_nuevas * SUPERFICIE_PROMEDIO * EMISIONES_NUEVA_CONSTRUCCION
         # Almacenar resultado
-        self.vector_v2[construccion] = huella
+        self.vector_v1[construccion] = huella
         # Devolver resultado
         return huella
     
 
     # ----------------------------------------------
-    # MÉTODOS PARA CÁLCULO DE VECTOR V3, VIVIENDAS SOSTENIBLES
+    # MÉTODOS PARA CÁLCULO DE VECTOR V2, VIVIENDAS SOSTENIBLES
     # ----------------------------------------------
-    def get_vector_v3(self, nuevas_sostenibles: float):
+    def get_vector_v2(self, nuevas_sostenibles: float):
         """
         explicar método
         """
         # Calcular huella de carbono a partir del caso base, reduciendo emisiones por vivienda sostenible
         huella = self.huella - self.huella * nuevas_sostenibles * REDUCCION_SOSTENIBILIDAD
         # Almacenar resultado
-        self.vector_v3[nuevas_sostenibles] = huella
+        self.vector_v2[nuevas_sostenibles] = huella
         # Devolver resultado
         return huella
     

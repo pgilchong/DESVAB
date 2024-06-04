@@ -21,7 +21,7 @@ from typing import List
 E1 = [0, .25, .5, .75, 1] # autoconsumo, proporción
 E2 = [0, .25, .5, .75, 1] # electrificación, proporción
 E3 = [0, .25, .5, .75, 1] # reducción de consumo, proporción
-V1 = [0, .25, .5, .75, 1] # mejora parque edificios E-G, proporción
+V3 = [0, .25, .5, .75, 1] # mejora parque edificios E-G, proporción
 
 
 # ----------------------------------------------
@@ -54,7 +54,7 @@ EFICIENCIA_ELECTRIFICACION = 0.3 # proporción
 # Vector E3
 MAXIMO_E3 = 0.16 # proporción
 
-# Vector V1
+# Vector V3
 REDUCCION_DEMANDA_REHABILITACION = 0.51 # proporción
 CALEFACCION_SATISFECHA_GAS = 0.27 # proporción
 CALEFACCION_SATISFECHA_ELECTRICIDAD = 0.14 # proporción
@@ -74,7 +74,7 @@ consumos_datadis_path = os.path.join(energia_path, 'consumos_datadis.csv') # Con
 # Vector E1
 potencial_radiacion_path = os.path.join(energia_path, 'potencial_PV') # carpeta con archivos de potencial de radiación por barrio (catastros)
 
-# Vector V1
+# Vector V3
 vivienda_path = os.path.join(data_path, 'vivienda')
 certificados_path = os.path.join(vivienda_path, 'inmuebles_certificacion_energetica.xlsx') # certificados energéticos
 antiguedades_path = os.path.join(vivienda_path, 'inmuebles_antiguedad.xlsx') # distribución de antigüedad de edificios
@@ -92,14 +92,14 @@ class AreaEnergia:
             valores_e1: List[float] = E1,
             valores_e2: List[float] = E2,
             valores_e3: List[float] = E3,
-            valores_v1: List[float] = V1,
+            valores_v3: List[float] = V3,
             verbose: bool = False
             ):
         """
         descripción de inicialización
 
         Args:
-            valores_v1 (list, optional): _description_. Defaults to [0, .25, .5, .75, 1].
+            valores_v3 (list, optional): _description_. Defaults to [0, .25, .5, .75, 1].
             valores_v2 (list, optional): _description_. Defaults to [0, .25, .5, .75, 1].
             valores_v3 (list, optional): _description_. Defaults to [0, .04, .08, .12, .16].
             verbose (bool, optional): _description_. Defaults to False.
@@ -144,23 +144,23 @@ class AreaEnergia:
         if verbose:
             print(f'Vector E3 calculado en {time.time() - start_time:.2f} s')
         
-        # Calcular vector V1 para valores dados
+        # Calcular vector V3 para valores dados
         if verbose:
-            print('Calculando vector V1...')
+            print('Calculando vector V3...')
             start_time = time.time()
-        self._wrap_v1()
-        self.vector_v1 = {}
-        for mejora, escenario in product(valores_v1, FACTOR_EMISION_MIX.keys()):
-            self.get_vector_v1(mejora, escenario)
+        self._wrap_v3()
+        self.vector_v3 = {}
+        for mejora, escenario in product(valores_v3, FACTOR_EMISION_MIX.keys()):
+            self.get_vector_v3(mejora, escenario)
         if verbose:
-            print(f'Vector V1 calculado en {time.time() - start_time:.2f} s')
+            print(f'Vector V3 calculado en {time.time() - start_time:.2f} s')
 
         # Guardar vectores en atributo vectores
         self.vectores = {
             'E1': self.vector_e1,
             'E2': self.vector_e2,
             'E3': self.vector_e3,
-            'V1': self.vector_v1
+            'V3': self.vector_v3
         }
 
         if verbose:
@@ -408,7 +408,7 @@ class AreaEnergia:
 
 
     # ----------------------------------------------
-    # MÉTODOS PARA CÁLCULO DE VECTOR V1, MEJORA PARQUE EDIFICIOS
+    # MÉTODOS PARA CÁLCULO DE VECTOR V3, MEJORA PARQUE EDIFICIOS
     # ----------------------------------------------
     def _get_certificados(self):
         """
@@ -573,7 +573,7 @@ class AreaEnergia:
         self.potencial_ahorro_electricidad = ahorro * CALEFACCION_SATISFECHA_ELECTRICIDAD
 
     
-    def _wrap_v1(self):
+    def _wrap_v3(self):
         """
         explicar método
         """
@@ -583,7 +583,7 @@ class AreaEnergia:
         self._get_ahorro()
 
     
-    def get_vector_v1(self, mejora: float, escenario: str):
+    def get_vector_v3(self, mejora: float, escenario: str):
         """
         explicar método
         """
@@ -604,7 +604,7 @@ class AreaEnergia:
             consumo_electricidad * FACTOR_EMISION_MIX[escenario]) + (
             consumo_gas * FACTOR_EMISION_GAS)
         # Almacenar resultado
-        self.vector_v1[(mejora, escenario)] = huella
+        self.vector_v3[(mejora, escenario)] = huella
         # Devolver resultado
         return huella
     
