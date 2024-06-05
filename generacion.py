@@ -8,6 +8,7 @@ Se combinan los resultados en un solo DataFrame y se guardan en archivos CSV, JS
 # ----------------------------------------------
 # MÓDULOS
 # ----------------------------------------------
+import ast
 import os
 import pandas as pd
 import sys
@@ -131,7 +132,7 @@ def main(
     sheet_base = pd.DataFrame({
         'ID.': barrios.index,
         'Barrio': nombre_barrios,
-        'Población': poblacion,
+        'Población': poblacion
     })
     sheet = sheet_base.copy()
     sheet['Base. Huella / tCO2e'] = energia.huella + vivienda.huella + movilidad.huella + urbanismo.huella + residuos.huella
@@ -165,6 +166,11 @@ def main(
     json_path = os.path.join(resultados_path, 'resultados.json')
     json_file = df.to_json(orient='table')
     with open(json_path, 'w') as f:
+        f.write(json_file)
+    json_2col_path = os.path.join(resultados_path, 'resultados_2col.json')
+    df[['valor_vector', 'valor_mix']] = df['valor_vector'].apply(lambda x: pd.Series(ast.literal_eval(x) if isinstance(ast.literal_eval(x), tuple) else (float(x), '')))
+    json_file = df.to_json(orient='table')
+    with open(json_2col_path, 'w') as f:
         f.write(json_file)
     if verbose:
         print(f'Resultados guardados en {time.time() - start_time:.2f} s')
