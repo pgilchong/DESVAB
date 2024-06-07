@@ -18,8 +18,8 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-R1 = [0, .25, .5, .75, 1] # reducción de residuos generados, proporción
-R2 = [0, .25, .5, .75, 1] # aumento de reciclaje desde caso base hasta estándar ue, proporción
+R1 = [0., .25, .5, .75, 1.] # reducción de residuos generados, proporción
+R2 = [0., .25, .5, .75, 1.] # aumento de reciclaje desde caso base hasta estándar ue, proporción
 
 
 # ----------------------------------------------

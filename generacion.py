@@ -85,6 +85,8 @@ def main(
                 # Formato a valor_vector
                 if type(valor_vector) == tuple:
                     valor_vector = (str(round(valor_vector[0]*100))+'%', valor_vector[1])
+                else:
+                    valor_vector = str(round(valor_vector*100))+'%'
                 # Calcular reducción y huella per cápita
                 reduccion = area.huella - huella
                 huella_capita = huella / poblacion
@@ -168,7 +170,9 @@ def main(
     with open(json_path, 'w') as f:
         f.write(json_file)
     json_2col_path = os.path.join(resultados_path, 'resultados_2col.json')
-    df[['valor_vector', 'valor_mix']] = df['valor_vector'].apply(lambda x: pd.Series(ast.literal_eval(x) if isinstance(ast.literal_eval(x), tuple) else (float(x), '')))
+    df[['valor_vector', 'valor_mix']] = df['valor_vector'].apply(
+        lambda x: pd.Series(ast.literal_eval(x) if isinstance(x, str) and x.startswith('(') and x.endswith(')') else (x, ''))
+    )
     json_file = df.to_json(orient='table')
     with open(json_2col_path, 'w') as f:
         f.write(json_file)

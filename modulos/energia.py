@@ -18,10 +18,10 @@ from typing import List
 # ----------------------------------------------
 # VALORES DE VECTORES
 # ----------------------------------------------
-E1 = [0, .25, .5, .75, 1] # autoconsumo, proporción
-E2 = [0, .25, .5, .75, 1] # electrificación, proporción
-E3 = [0, .25, .5, .75, 1] # reducción de consumo, proporción
-V3 = [0, .25, .5, .75, 1] # mejora parque edificios E-G, proporción
+E1 = [0., .25, .5, .75, 1.] # autoconsumo, proporción
+E2 = [0., .25, .5, .75, 1.] # electrificación, proporción
+E3 = [0., .25, .5, .75, 1.] # reducción de consumo, proporción
+V3 = [0., .25, .5, .75, 1.] # mejora parque edificios E-G, proporción
 
 
 # ----------------------------------------------
