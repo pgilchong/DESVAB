@@ -42,7 +42,7 @@ data_path = os.path.join(desvab_root, 'datos')
 vivienda_path = os.path.join(data_path, 'vivienda')
 
 # Caso base
-distribucion_nueva_construccion_path = os.path.join(vivienda_path, 'distribución_nueva_construcción.xlsx')
+distribucion_nueva_construccion_path = os.path.join(vivienda_path, 'distribución_nueva_construcción_.xlsx')
 
 
 # ----------------------------------------------
@@ -109,7 +109,7 @@ class AreaVivienda:
         """
         # Leer archivo de distribución de nueva construcción
         distribucion = pd.read_excel(distribucion_nueva_construccion_path,
-                                     usecols=[0, 1, 2, 3], index_col=0, skipfooter=1)
+                                     usecols=[0, 1, 3, 4], index_col=0)
         distribucion.index = distribucion.index.astype(str)
 
         # Crear serie vacía para almacenar viviendas nuevas por barrio
