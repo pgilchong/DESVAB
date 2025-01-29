@@ -1,7 +1,17 @@
+# urbanismo.py
 
 """
-    explicar módulo
+MÓDULO ÁREA URBANISMO
+
+Este módulo contiene la clase `AreaUrbanismo`, una herramienta para gestionar
+y calcular la captación de CO2 mediante el análisis de usos del suelo urbano
+y espacios verdes. Permite evaluar escenarios de transformación de suelo
+urbanizado a zonas verdes, calculando el potencial de secuestro de carbono
+por barrio según tipologías de cobertura terrestre (CORINE Land Cover).
+Incluye modelos de captación de CO2 para diferentes tipos de vegetación
+y usos del terreno en el contexto urbano de València.
 """
+
 
 # ----------------------------------------------
 # MÓDULOS
@@ -10,6 +20,7 @@ import geopandas as gpd
 import os
 import pandas as pd
 import time
+
 from geo import get_poligonos_barrios
 from typing import List
 
@@ -53,14 +64,14 @@ CAPTACION_CO2 = { # valores de captación de tCO2e / ha / año
 # ----------------------------------------------
 # RUTAS Y NOMBRES DE ARCHIVOS
 # ----------------------------------------------
-base_path = os.path.abspath(__file__)
-desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'datos')
-urbanismo_path = os.path.join(data_path, 'urbanismo')
+BASE_PATH = os.path.abspath(__file__)
+DESVAB_ROOT = os.path.dirname(os.path.dirname(BASE_PATH))
+DATA_PATH = os.path.join(DESVAB_ROOT, 'datos')
+URBANISMO_PATH = os.path.join(DATA_PATH, 'urbanismo')
 
 # Caso base
-areas_path = os.path.join(urbanismo_path, 'CLC_Barris', 'CLC_Barris.shp')
-barrios_path = os.path.join(data_path, 'demografia', 'barrios.xlsx')
+AREAS_PATH = os.path.join(URBANISMO_PATH, 'CLC_Barris', 'CLC_Barris.shp')
+BARRIOS_PATH = os.path.join(DATA_PATH, 'demografia', 'barrios.xlsx')
 
 
 # ----------------------------------------------
@@ -68,15 +79,28 @@ barrios_path = os.path.join(data_path, 'demografia', 'barrios.xlsx')
 # ----------------------------------------------
 class AreaUrbanismo:
     """
-    explicar clase
+    Clase para gestionar y calcular el impacto ambiental de la planificación
+    urbana mediante el análisis de usos del suelo. Permite cuantificar la
+    capacidad de secuestro de carbono de las áreas verdes existentes y
+    proyectadas, evaluando escenarios de renaturalización urbana y expansión
+    de infraestructura verde.
     """
     def __init__(
             self,
             valores_u1: List[float] = U1,
             verbose: bool = False
-    ):
+            ) -> None:
         """
-        explicar método
+        Inicializa una instancia de la clase AreaUrbanismo, calculando el caso base
+        y el vector U1 para los valores especificados.
+
+        Args:
+            - valores_u1 (list, opcional):
+                Lista de porcentajes de conversión de suelo urbanizado a parques
+                urbanos a evaluar. Por defecto, [0, .25, .5, .75, 1].
+            - verbose (bool, opcional):
+                Indica si se deben imprimir mensajes informativos.
+                Por defecto, False.
         """
         # Inicializar atributos con caso base
         if verbose:
@@ -111,10 +135,15 @@ class AreaUrbanismo:
     # ----------------------------------------------
     def _get_areas_corine(self):
         """
-        explicar método
+        Procesa los datos CORINE Land Cover para calcular la distribución de
+        usos del suelo por barrio.
+
+        Este método realiza un análisis espacial de superposición entre las
+        áreas de cobertura terrestre y los límites de barrios, calculando la
+        superficie de cada tipología de uso del suelo en cada barrio.
         """
         # Leer archivo de áreas urbanas
-        gdf_areas = gpd.read_file(areas_path)[['CODE_18', 'geometry']]
+        gdf_areas = gpd.read_file(AREAS_PATH)[['CODE_18', 'geometry']]
 
         # Recodificar tipologías
         gdf_areas['CODE_Area'] = gdf_areas['CODE_18'].replace(
@@ -141,10 +170,14 @@ class AreaUrbanismo:
 
     def _get_demografia(self):
         """
-        explicar método
+        Carga y procesa los datos demográficos por barrio, incluyendo población
+        y métricas de zonas verdes por habitante.
+
+        Establece la base para el cálculo de necesidades y potencial de
+        expansión de áreas verdes urbanas.
         """
         # Leer archivo de datos demográficos
-        barrios = pd.read_excel(barrios_path, index_col=0, skipfooter=2)
+        barrios = pd.read_excel(BARRIOS_PATH, index_col=0, skipfooter=2)
         barrios.index = barrios.index.astype(str)
 
         # Guardar datos
@@ -153,7 +186,12 @@ class AreaUrbanismo:
     
     def _get_areas_l7(self):
         """
-        explicar método
+        Calcula las áreas de zonas verdes (l7) a partir de indicadores
+        urbanísticos y demográficos.
+
+        Considera los estándares actuales y propuestos de metros cuadrados
+        de zona verde por habitante, ajustando las superficies existentes
+        de áreas naturales (l6).
         """
         # Calcular áreas de l7 a partir de Zonas Verdes por habitante, población y áreas de l6
         self.areas['l7'] = self.barrios['ZV/hab / m2'] * self.barrios['Población'] - self.areas['l6']
@@ -164,7 +202,11 @@ class AreaUrbanismo:
 
     def _get_captacion(self):
         """
-        explicar método
+        Calcula la captación neta de CO2 por barrio basada en los usos del suelo.
+
+        Aplica tasas específicas de secuestro de carbono por tipología de
+        cobertura terrestre, considerando variaciones regionales (ej. cultivos
+        cítricos en Poblats del Nord) y ajustando unidades de superficie.
         """
         # Aplanar diccionario para simplificar operaciones
         valores_co2 = {
@@ -192,8 +234,8 @@ class AreaUrbanismo:
 
     def _get_caso_base(self):
         """
-        explicar método
-        wrapper
+        Coordina el cálculo completo del caso base integrando datos de usos
+        del suelo, información demográfica y modelos de captación de CO2.
         """
         self._get_areas_corine()
         self._get_demografia()
@@ -204,9 +246,25 @@ class AreaUrbanismo:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR U1, AUMENTO DE PARQUE URBANO
     # ----------------------------------------------
-    def get_vector_u1(self, suelo_a_parque: float):
+    def get_vector_u1(
+            self,
+            suelo_a_parque: float
+            ) -> pd.Series:
         """
-        explicar método
+        Calcula el impacto ambiental para un escenario específico de conversión
+        de suelo urbanizado a zonas verdes.
+
+        Args:
+            - suelo_a_parque (float):
+                Proporción de conversión de áreas urbanas a parques (entre 0 y 1),
+                donde 1 representa el cumplimiento total de la propuesta de
+                zonas verdes por habitante.
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono negativa (secuestro) por barrio en tCO2e,
+                resultante del aumento de superficie verde y reducción de
+                áreas urbanizadas.
         """
         ### Recalcular áreas a partir del aumento propuesto
         # Copiar áreas originales

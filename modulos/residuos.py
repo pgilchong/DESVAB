@@ -1,7 +1,17 @@
+# residuos.py
 
 """
-    explicar módulo
+MÓDULO ÁREA RESIDUOS
+
+Este módulo contiene la clase `AreaResiduos`, una herramienta para gestionar
+y calcular las emisiones de CO2 asociadas a la generación y tratamiento de
+residuos urbanos. Permite analizar el impacto ambiental de diferentes estrategias
+de reducción de residuos y mejora de tasas de reciclaje, considerando la
+distribución demográfica y socioeconómica por barrio. Incluye modelos para
+evaluar escenarios de economía circular y cumplimiento de objetivos europeos
+de gestión de residuos en la ciudad de València.
 """
+
 
 # ----------------------------------------------
 # MÓDULOS
@@ -11,6 +21,7 @@ import numpy as np
 import os
 import pandas as pd
 import time
+
 from math import e
 from typing import List
 
@@ -109,14 +120,14 @@ ESCENARIOS_R2 = {
 # ----------------------------------------------
 # RUTAS Y NOMBRES DE ARCHIVOS
 # ----------------------------------------------
-base_path = os.path.abspath(__file__)
-desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'datos')
-residuos_path = os.path.join(data_path, 'residuos')
+BASE_PATH = os.path.abspath(__file__)
+DESVAB_ROOT = os.path.dirname(os.path.dirname(BASE_PATH))
+DATA_PATH = os.path.join(DESVAB_ROOT, 'datos')
+RESIDUOS_PATH = os.path.join(DATA_PATH, 'residuos')
 
 # Caso base
-barrios_path = os.path.join(data_path, 'demografia', 'barrios.xlsx')
-betas_path = os.path.join(residuos_path, 'betas_residuos.xlsx')
+BARRIOS_PATH = os.path.join(DATA_PATH, 'demografia', 'barrios.xlsx')
+BETAS_PATH = os.path.join(RESIDUOS_PATH, 'betas_residuos.xlsx')
 
 
 # ----------------------------------------------
@@ -124,16 +135,32 @@ betas_path = os.path.join(residuos_path, 'betas_residuos.xlsx')
 # ----------------------------------------------
 class AreaResiduos:
     """
-    explicar clase
+    Clase para gestionar y calcular las emisiones asociadas a la gestión de
+    residuos urbanos. Permite cuantificar la huella de carbono de diferentes
+    tipos de residuos y tratamientos, evaluando escenarios de prevención en
+    la generación de residuos y mejora de los sistemas de reciclaje y
+    valorización material.
     """
     def __init__(
             self,
             valores_r1: List[float] = R1,
             valores_r2: List[float] = R2,
             verbose: bool = False
-            ):
+            ) -> None:
         """
-        explicar método
+        Inicializa una instancia de la clase AreaResiduos, calculando el caso base
+        y los vectores R1 y R2 para los valores especificados.
+
+        Args:
+            - valores_r1 (list, opcional):
+                Lista de porcentajes de reducción de generación de residuos a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - valores_r2 (list, opcional):
+                Lista de porcentajes de mejora en tasas de reciclaje a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - verbose (bool, opcional):
+                Indica si se deben imprimir mensajes informativos.
+                Por defecto, False.
         """
         # Inicializar atributos con caso base
         if verbose:
@@ -177,12 +204,16 @@ class AreaResiduos:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE CASO BASE
     # ----------------------------------------------
-    def _get_demografia(self):
+    def _get_demografia(self) -> None:
         """
-        explicar método
+        Carga y procesa los datos demográficos y socioeconómicos por barrio.
+
+        Este método lee los archivos de población y renta per cápita,
+        estableciendo las bases para el cálculo de coeficientes de generación
+        de residuos ajustados a las características de cada zona.
         """
         # Leer archivo de datos demográficos
-        barrios = pd.read_excel(barrios_path, index_col=0, skipfooter=2)
+        barrios = pd.read_excel(BARRIOS_PATH, index_col=0, skipfooter=2)
         barrios.index = barrios.index.astype(str)
 
         # Guardar datos
@@ -190,16 +221,25 @@ class AreaResiduos:
         self.renta = barrios['Renta per cápita / €']
 
 
-    def _get_betas(self):
+    def _get_betas(self) -> None:
         """
-        explicar método
+        Calcula los coeficientes beta de generación de residuos por barrio.
+
+        Utiliza un modelo exponencial basado en la renta per cápita para
+        estimar la relación entre nivel socioeconómico y producción de
+        residuos, según datos históricos y estudios de referencia.
         """
         self.betas = 2.88 * 0.1 * e**(6 * 10**(-5) * self.renta)
 
 
-    def _get_huella(self):
+    def _get_huella(self) -> None:
         """
-        explicar método
+        Calcula la huella de carbono total por barrio considerando todos los
+        tipos de residuos y tratamientos.
+
+        Combina datos de generación de residuos, distribución de tratamientos
+        y factores de emisión específicos para cada flujo de residuos,
+        aplicando los coeficientes beta de generación por barrio.
         """
         ### Calcular huella de carbono promedio
         # Inicializar huella a 0
@@ -218,10 +258,10 @@ class AreaResiduos:
         self.huella = huella
 
     
-    def _get_caso_base(self):
+    def _get_caso_base(self) -> None:
         """
-        explicar método
-        wrapper
+        Coordina el cálculo completo del caso base integrando datos
+        demográficos, coeficientes de generación y modelos de emisiones.
         """
         self._get_demografia()
         self._get_betas()
@@ -231,9 +271,22 @@ class AreaResiduos:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR R1, REDUCCIÓN DE RESIDUOS GENERADOS
     # ----------------------------------------------
-    def get_vector_r1(self, reduccion: float):
+    def get_vector_r1(
+            self,
+            reduccion: float
+            ) -> float:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico de reducción
+        en la generación de residuos.
+
+        Args:
+            - reduccion (float):
+                Proporción de reducción en generación de residuos (entre 0 y 1).
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e, aplicando una reducción
+                lineal sobre el caso base según el porcentaje especificado.
         """
         # Calcular huella de carbono reducida
         huella = self.huella * (1 - reduccion * MAXIMO_R1)
@@ -248,9 +301,25 @@ class AreaResiduos:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR R2, AUMENTO DE RECICLAJE
     # ----------------------------------------------
-    def get_vector_r2(self, reciclado: float):
+    def get_vector_r2(
+            self,
+            reciclado: float
+            ) -> float:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico de mejora
+        en las tasas de reciclaje y valorización de residuos.
+
+        Args:
+            - reciclado (float):
+                Proporción de avance hacia los objetivos europeos de tratamiento
+                de residuos (entre 0 y 1), donde 1 representa el cumplimiento
+                total de los estándares UE.
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e, considerando la
+                reasignación de flujos de residuos hacia tratamientos menos
+                emisores según los escenarios definidos.
         """
         # Recalcular huella con tabla de tratamiento pertinente
         huella_av = 0
@@ -268,5 +337,4 @@ class AreaResiduos:
 
         # Devolver resultado
         return huella
-    
     

@@ -1,55 +1,68 @@
+# geo.py
+
 """
-FUNCIONES PARA LA GESTIÓN DE DATOS GEOGRÁFICOS
+MÓDULO PARA LA GESTIÓN DE DATOS GEOGRÁFICOS
 
-Este script contiene funciones para trabajar con datos geográficos.
-
-El uso pensado para este script es importarlo en otros scripts y
-utilizar las funciones que contiene.
+Este módulo contiene funciones para trabajar con datos geográficos
+o geoespaciales con la idea de importarlas en otros módulos.
 
 Funciones:
-    - get_cps_valencia:
-        Devuelve los códigos postales de Valencia a partir de los CPs
-        registrados en el fichero de consumos eléctricos del anuario.
+    - get_cps_valencia():
+        Obtiene una lista de los códigos postales de Valencia desde el archivo de consumos eléctricos.
 
-    - get_poligonos_cp:
-        Devuelve un dataframe con los polígonos de cada código postal
-        de València a partir del archivo de códigos postales de la
-        Comunidad Valenciana.
+    - get_poligonos_cp():
+        Devuelve un GeoDataFrame con los polígonos de los códigos postales de Valencia.
 
-    - get_poligonos_barrios:
-        Devuelve un dataframe con los polígonos de cada barrio a partir
-        del archivo de polígonos de la ciudad.
+    - get_barrios_ids():
+        Obtiene una lista con los IDs de los barrios de Valencia.
 
-    - get_areas_barrios:
-        Devuelve un diccionario con el área de cada barrio a partir del
-        archivo de polígonos de la ciudad.
+    - parse_geometry():
+        Función auxiliar para convertir representaciones GeoJSON en objetos Polygon.
 
-    - get_areas_cp:
-        Devuelve un diccionario con el área de cada código postal a
-        partir del archivo de códigos postales de la Comunidad
-        Valenciana.
+    - get_poligonos_barrios():
+        Devuelve un GeoDataFrame con los polígonos de los barrios de Valencia.
 
-    - get_matriz_cp:
-        Devuelve un dataframe con la matriz de overlap entre los
-        polígonos de los códigos postales y los polígonos de los
-        barrios de València.
+    - get_areas_barrios():
+        Calcula el área total de cada barrio sumando sus polígonos asociados.
 
-    - ids_a_nombre:
-        Devuelve un diccionario con el ID de cada barrio como clave y
-        el nombre del barrio como valor.
+    - get_areas_cp():
+        Calcula el área total de cada código postal sumando sus polígonos asociados.
 
-    - get_poligonos_cuadrantes:
-        Devuelve un dataframe con los polígonos de cada cuadrante de
-        València a partir del archivo de límites de cuadrantes.
+    - get_matriz_cp():
+        Genera una matriz de superposición entre los códigos postales y los barrios de Valencia.
 
-    - get_matriz_cuadrantes:
-        Devuelve un dataframe con la matriz de overlap entre los
-        polígonos de los cuadrantes y los polígonos de los barrios de
-        València.
+    - ids_a_nombre():
+        Devuelve un diccionario que mapea el ID de cada barrio a su nombre correspondiente.
+
+    - get_poligonos_cuadrantes():
+        Devuelve un GeoDataFrame con los polígonos de los cuadrantes de Valencia.
+
+    - get_areas_cuadrantes():
+        Calcula el área total de cada cuadrante sumando sus polígonos asociados.
+
+    - get_matriz_cuadrantes():
+        Genera una matriz de superposición entre los cuadrantes y los barrios de Valencia.
+
+    - get_poligonos_areas_censales():
+        Devuelve un GeoDataFrame con los polígonos de las áreas censales de Valencia.
+
+    - get_areas_censales():
+        Calcula el área total de cada área censal sumando sus polígonos asociados.
+
+    - get_matriz_overlap_censales():
+        Genera una matriz de superposición entre las áreas censales y los barrios de Valencia.
+
+    - get_poligonos_distritos():
+        Obtiene los polígonos de los distritos de Valencia combinando los de los barrios.
+
+    - get_poligonos_distritos_alt():
+        Método alternativo para obtener los polígonos de los distritos desde un archivo JSON.
+
 """
 
 
 # LIBRERÍAS
+import ast
 import os
 import pandas as pd
 import geopandas as gpd
@@ -57,23 +70,24 @@ import json
 from typing import List
 import warnings
 
-from shapely.geometry import shape, Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon
 
 
 # -------------------------------------------------
 # CONSTANTES
 # -------------------------------------------------
 # NOMBRES DE CARPETAS Y ARCHIVOS
-CARPETA_DATOS = 'datos'
-CARPETA_ENERGIA = 'energia'
-CARPETA_GEO = 'geo'
-CARPETA_MOVILIDAD = 'movilidad'
-ARCHIVO_CONSUMOS = 'consumos_datadis.csv'
-ARCHIVO_POLIGONOS = 'codigos_postales.geojson'
-ARCHIVO_BARRIOS = 'barris-barrios.xlsx'
-ARCHIVO_CUADRANTES = 'contaminacion_trafico_2021_v3.xlsx'
-ARCHIVO_CENSALES = 'seccions-censals-secciones-censales.xlsx'
-ARCHIVO_DISTRITOS = 'districtes-distritos.json'
+BASE_PATH = os.path.abspath(__file__)
+DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(BASE_PATH)), 'datos')
+ENERGIA_PATH = os.path.join(DATA_PATH, 'energia')
+GEO_PATH = os.path.join(DATA_PATH, 'geo')
+MOVILIDAD_PATH = os.path.join(DATA_PATH, 'movilidad')
+CONSUMOS_PATH = os.path.join(ENERGIA_PATH, 'consumos_datadis.csv')
+POLIGONOS_PATH = os.path.join(GEO_PATH, 'codigos_postales.geojson')
+BARRIOS_PATH = os.path.join(GEO_PATH, 'barris-barrios.xlsx')
+CUADRANTES_PATH = os.path.join(MOVILIDAD_PATH, 'contaminacion_trafico_2021_v3.xlsx')
+CENSALES_PATH = os.path.join(GEO_PATH, 'seccions-censals-secciones-censales.xlsx')
+DISTRITOS_PATH = os.path.join(GEO_PATH, 'districtes-distritos.json')
 
 
 # -------------------------------------------------
@@ -88,14 +102,10 @@ def get_cps_valencia() -> List[int]:
         - cps (List[int]):
             Lista de códigos postales.
     """
-    # Obtener el path del archivo
-    path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_ENERGIA, ARCHIVO_CONSUMOS)
     # Leer el archivo
-    df_from_file = pd.read_csv(path, sep=',', encoding='utf-8',
-                               skiprows=5, skipfooter=3, na_values='-',
-                               engine='python')
+    df_from_file = pd.read_csv(
+        CONSUMOS_PATH, sep=',', encoding='utf-8', 
+        skiprows=5, skipfooter=3, na_values='-', engine='python')
     # Obtener los códigos postales
     cps = df_from_file.iloc[1:, 0].astype(str).values
     # Devolver los códigos postales
@@ -111,18 +121,17 @@ def get_poligonos_cp(
     Valenciana.
 
     Args:
-        cps (List[str], opcional): Lista de códigos postales de la ciudad de València.
-                                   Por defecto, get_cps_valencia().
+        - cps (List[str], opcional):
+            Lista de códigos postales de la ciudad de València.
+            Por defecto, get_cps_valencia().
     
     Devuelve:
-        poligonos_cp (gpd.GeoDataFrame): GeoDataFrame con índice CP y columna 'geometry' con los polígonos
-                                         de cada CP.
+        - poligonos_cp (gpd.GeoDataFrame):
+            GeoDataFrame con índice CP y columna 'geometry' con los polígonos
+            de cada CP.
     """
-    # Obtener el path del archivo
-    cps_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            CARPETA_DATOS, CARPETA_GEO, ARCHIVO_POLIGONOS)
     # Leer el archivo
-    with open(cps_path) as f:
+    with open(POLIGONOS_PATH) as f:
         json_cps = json.load(f)
     
     # Crear una lista para almacenar los polígonos y los códigos postales
@@ -156,12 +165,8 @@ def get_barrios_ids() -> List[str]:
         - barrios_ids (List[str]):
             Lista con los IDs de los barrios de València.
     """
-    # Obtener el path del archivo
-    barrios_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_GEO, ARCHIVO_BARRIOS)
     # Leer el archivo
-    poligonos_barrios = pd.read_excel(barrios_path)
+    poligonos_barrios = pd.read_excel(BARRIOS_PATH)
     # Crear el ID (formato distrito.barrio)
     poligonos_barrios['ID'] = (
         poligonos_barrios['Codigo distrito'].astype(str)) + '.' + (
@@ -170,6 +175,24 @@ def get_barrios_ids() -> List[str]:
     barrios_ids = poligonos_barrios['ID'].sort_values().unique().tolist()
     # Devolver la lista de IDs de los barrios
     return barrios_ids
+
+
+def parse_geometry(geo_shape_str: str) -> Polygon:
+    """
+    Función de ayuda para parsear la columna 'geo_shape' de los
+    archivos de datos geográficos.
+
+    Args:
+        - geo_shape_str (str):
+            String con la representación de un polígono en formato
+            GeoJSON.
+
+    Devuelve:
+        - Polygon:
+            Polígono creado a partir de la representación GeoJSON.
+    """
+    geo_dict = ast.literal_eval(geo_shape_str)
+    return Polygon(geo_dict['coordinates'][0])
 
 
 def get_poligonos_barrios() -> gpd.GeoDataFrame:
@@ -182,19 +205,14 @@ def get_poligonos_barrios() -> gpd.GeoDataFrame:
             GeoDataFrame con índice ID y columna 'geometry' con los polígonos
             de cada barrio.
     """
-    # Obtener el path del archivo
-    barrios_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_GEO, ARCHIVO_BARRIOS)
     # Leer el archivo
-    poligonos_barrios = pd.read_excel(barrios_path)
+    poligonos_barrios = pd.read_excel(BARRIOS_PATH)
     # Crear el ID (formato distrito.barrio)
     poligonos_barrios['ID'] = (
         poligonos_barrios['Codigo distrito'].astype(str)) + '.' + (
         poligonos_barrios['Codigo barrio'].astype(str))
     # Evaluar la columna geo_shape para obtener el polígono de cada barrio
-    poligonos_barrios['geometry'] = poligonos_barrios['geo_shape'].apply(
-        lambda x: Polygon(eval(x)['coordinates'][0]))
+    poligonos_barrios['geometry'] = poligonos_barrios['geo_shape'].apply(parse_geometry)
     # Filtrar las columnas y preparar para GeoDataFrame
     poligonos_barrios = poligonos_barrios[['ID', 'geometry']]
 
@@ -211,7 +229,7 @@ def get_poligonos_barrios() -> gpd.GeoDataFrame:
 
 def get_areas_barrios(
         poligonos_barrios: gpd.GeoDataFrame = None
-    ) -> dict:
+        ) -> dict:
     """
     Calcula la suma de las áreas de los polígonos asociados a cada
     barrio devueltos por get_poligonos_barrios y devuelve un
@@ -237,7 +255,7 @@ def get_areas_barrios(
 
 def get_areas_cp(
         poligonos_cp: gpd.GeoDataFrame = None
-    ) -> dict:
+        ) -> dict:
     """
     Calcula la suma de las áreas de los polígonos asociados a cada
     código postal devueltos por get_poligonos_cp y devuelve un
@@ -271,9 +289,12 @@ def get_matriz_cp(
     CPs y los polígonos de los barrios de València.
     
     Args:
-        - porcentaje (bool, opcional): Si True, devuelve el porcentaje de overlap. Por defecto, True.
-        - poligonos_cp (gpd.GeoDataFrame, opcional): GeoDataFrame con los polígonos de los códigos postales. Por defecto, get_poligonos_cp().
-        - poligonos_barrios (gpd.GeoDataFrame, opcional): GeoDataFrame con los polígonos de los barrios. Por defecto, get_poligonos_barrios().
+        - porcentaje (bool, opcional):
+            Si True, devuelve el porcentaje de overlap. Por defecto, True.
+        - poligonos_cp (gpd.GeoDataFrame, opcional):
+            GeoDataFrame con los polígonos de los códigos postales. Por defecto, get_poligonos_cp().
+        - poligonos_barrios (gpd.GeoDataFrame, opcional):
+            GeoDataFrame con los polígonos de los barrios. Por defecto, get_poligonos_barrios().
     
     Devuelve:
         - matriz_overlap (pd.DataFrame): DataFrame con índice CP y columnas barrio con el overlap entre el CP y el barrio.
@@ -285,9 +306,6 @@ def get_matriz_cp(
     # Inicializar el DataFrame de la matriz de overlap
     matriz_overlap = pd.DataFrame(0, index=poligonos_cp.index.unique(), columns=poligonos_barrios.index.unique())
     areas_cp = get_areas_cp(poligonos_cp)
-
-    #poligonos_cp['geometry'] = poligonos_cp['geometry'].to_crs({'proj': 'cea'})
-    #poligonos_barrios['geometry'] = poligonos_barrios['geometry'].to_crs({'proj': 'cea'})
     
     # Recorrer los CPs
     for cp_index, cp_row in poligonos_cp.iterrows():
@@ -316,16 +334,12 @@ def ids_a_nombre() -> dict:
     nombre del barrio como valor.
 
     Devuelve:
-        dict_id_a_nombre (dict):
+        - dict_id_a_nombre (dict):
             Diccionario con el ID de cada barrio como clave y el nombre
             del barrio como valor.
     """
-    # Obtener el path del archivo
-    barrios_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_GEO, ARCHIVO_BARRIOS)
     # Leer el archivo
-    poligonos_barrios = pd.read_excel(barrios_path)
+    poligonos_barrios = pd.read_excel(BARRIOS_PATH)
     # Crear el ID (formato distrito.barrio)
     poligonos_barrios['ID'] = (
         poligonos_barrios['Codigo distrito'].astype(str)) + '.' + (
@@ -346,17 +360,14 @@ def get_poligonos_cuadrantes() -> gpd.GeoDataFrame:
     València a partir del archivo de límites de cuadrantes.
 
     Devuelve:
-        - GeoDataFrame con índice cuadrante y columna 'geometry' con los
-          polígonos de cada cuadrante.
+        - gdf_poligonos_cuadrantes (gpd.GeoDataFrame):
+            GeoDataFrame con índice cuadrante y columna 'geometry' con los
+            polígonos de cada cuadrante.
     """
-    # Obtener el path del archivo
-    cuadrantes_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_MOVILIDAD, ARCHIVO_CUADRANTES)
     with warnings.catch_warnings(record=True):
         warnings.simplefilter('ignore', UserWarning)
         poligonos_cuadrantes = (
-            pd.read_excel(cuadrantes_path).set_index('num_cuadrante').iloc[:, :4])
+            pd.read_excel(CUADRANTES_PATH).set_index('num_cuadrante').iloc[:, :4])
     # Renombrar las columnas
     poligonos_cuadrantes.columns = ['lon_min', 'lon_max', 'lat_min', 'lat_max']
     # Crear la columna 'geometry' con los polígonos
@@ -374,14 +385,15 @@ def get_poligonos_cuadrantes() -> gpd.GeoDataFrame:
 
 def get_areas_cuadrantes(
         poligonos_cuadrantes: gpd.GeoDataFrame = get_poligonos_cuadrantes()
-    ) -> dict:
+        ) -> dict:
     """
     Devuelve un diccionario con el área de cada cuadrante a partir del
     archivo de límites de cuadrantes.
 
-    Returns:
-        pd.Series: Serie con el índice representando el número del cuadrante y
-                   el valor representando el área de cada cuadrante.
+    Devuelve:
+        - areas_cuadrantes (pd.Series):
+            Serie con el índice representando el número del cuadrante y
+            el valor representando el área de cada cuadrante.
     """
     # Utilizar la función modificada para obtener los polígonos de cuadrantes como un GeoDataFrame
     gdf_poligonos_cuadrantes = get_poligonos_cuadrantes() if poligonos_cuadrantes is None else poligonos_cuadrantes
@@ -430,13 +442,14 @@ def get_poligonos_areas_censales() -> gpd.GeoDataFrame:
     """
     Devuelve un GeoDataFrame con los polígonos de cada área censal
     de València a partir del archivo de límites de áreas censales.
+
+    Devuelve:
+        - gdf_poligonos_censales (gpd.GeoDataFrame):
+            GeoDataFrame con índice ID y columna 'geometry' con los
+            polígonos de cada área censal.
     """
-    # Obtener el path del archivo
-    censales_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_GEO, ARCHIVO_CENSALES)
     # Leer el archivo
-    poligonos_censales = pd.read_excel(censales_path)
+    poligonos_censales = pd.read_excel(CENSALES_PATH)
     # Crear el ID (renombrar Código Distrito Sección a ID)
     poligonos_censales = poligonos_censales.rename(
         columns={'Código Distrito Sección': 'ID'})
@@ -444,8 +457,7 @@ def get_poligonos_areas_censales() -> gpd.GeoDataFrame:
     poligonos_censales['ID'] = poligonos_censales['ID'].astype(int).astype(str).apply(
         lambda x: '0' + x if len(x) == 3 else x)
     # Evaluar la columna geo_shape para obtener el polígono de cada área censal
-    poligonos_censales['geometry'] = poligonos_censales['geo_shape'].apply(
-        lambda x: Polygon(eval(x)['coordinates'][0]))
+    poligonos_censales['geometry'] = poligonos_censales['geo_shape'].apply(parse_geometry)
     # Convertir a GeoDataFrame
     gdf_poligonos_censales = gpd.GeoDataFrame(poligonos_censales, geometry='geometry')
     # Establecer el ID como índice y ordenarlo
@@ -457,7 +469,7 @@ def get_poligonos_areas_censales() -> gpd.GeoDataFrame:
 
 def get_areas_censales(
         poligonos_censales: gpd.GeoDataFrame = get_poligonos_areas_censales()
-    ) -> dict:
+        ) -> dict:
     """
     Calcula la suma de las áreas de los polígonos asociados a cada
     área censal devueltos por get_poligonos_areas_censales y devuelve
@@ -484,6 +496,12 @@ def get_matriz_overlap_censales() -> pd.DataFrame:
     """
     Devuelve un DataFrame con la matriz de overlap entre los polígonos
     de las áreas censales y los polígonos de los barrios de València.
+
+    Devuelve:
+        - matriz_overlap (pd.DataFrame):
+            DataFrame con índice área censal y columnas barrio con el
+            overlap entre el área censal y el barrio, expresado como
+            porcentaje del área del área censal que cada barrio ocupa.
     """
     # Definir poligonos utilizando las funciones actualizadas que devuelven GeoDataFrames
     poligonos_censales = get_poligonos_areas_censales()
@@ -510,7 +528,19 @@ def get_matriz_overlap_censales() -> pd.DataFrame:
 
 def get_poligonos_distritos(
         paper: bool = False
-):
+        ) -> gpd.GeoDataFrame:
+    """
+    Combina los polígonos de los barrios para obtener los polígonos de los distritos.
+
+    Args:
+        - paper (bool, opcional):
+            Si True, elimina los barrios 17.5, 19.3, 19.4, 19.5 y 19.6 (para el paper).
+            Por defecto, False.
+
+    Devuelve:
+        - poligonos_distritos_gdf (gpd.GeoDataFrame):
+            GeoDataFrame con índice ID y columna 'geometry' con los polígonos de cada distrito.
+    """
     # a partir de get_poligonos_barrios(), combina los polígonos de los barrios para obtener los polígonos de los distritos
     # se sabe los distritos a partir de la primera parte del índice de los barrios (antes del punto)
     poligonos_barrios = get_poligonos_barrios()
@@ -531,18 +561,23 @@ def get_poligonos_distritos(
     return poligonos_distritos
 
 
-def get_poligonos_distritos_(
+def get_poligonos_distritos_alt(
         paper: bool = False
-):
-    # como get_poligonos_barrios pero para distritos
+        ) -> gpd.GeoDataFrame:
+    """
+    Combina los polígonos de los barrios para obtener los polígonos de los distritos (método alternativo).
 
-    # Obtener el path del archivo
-    distritos_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        CARPETA_DATOS, CARPETA_GEO, ARCHIVO_DISTRITOS)
-    
+    Args:
+        - paper (bool, opcional):
+            Si True, elimina los barrios 17.5, 19.3, 19.4, 19.5 y 19.6 (para el paper).
+            Por defecto, False.
+
+    Devuelve:
+        - poligonos_distritos_gdf (gpd.GeoDataFrame):
+            GeoDataFrame con índice ID y columna 'geometry' con los polígonos de cada distrito.
+    """    
     # Leer el archivo json
-    poligonos_distritos = pd.read_json(distritos_path, encoding='utf-8')
+    poligonos_distritos = pd.read_json(DISTRITOS_PATH, encoding='utf-8')
 
     # identificador Código distrito
     poligonos_distritos = poligonos_distritos.rename(columns={'coddistrit': 'ID'})

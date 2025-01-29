@@ -1,7 +1,18 @@
-    
+# energia.py
+
 """
-    explicar módulo
+MÓDULO ÁREA ENERGÍA
+
+Este módulo contiene la clase `AreaEnergia`, una herramienta
+para gestionar y calcular el consumo de energía eléctrica y de gas,
+así como la huella de carbono asociada en diferentes sectores
+(Residencial, Comercial e Industrial) por Código Postal (CP) y
+barrio. Además, permite evaluar diferentes escenarios de autoconsumo,
+electrificación, reducción de consumo y mejora del parque de edificios,
+facilitando el análisis de impacto ambiental y energético en la ciudad
+de València.
 """
+
 
 # ----------------------------------------------
 # MÓDULOS
@@ -10,6 +21,7 @@ import numpy as np
 import os
 import pandas as pd
 import time
+
 from geo import get_matriz_cp
 from itertools import product
 from typing import List
@@ -63,21 +75,21 @@ CALEFACCION_SATISFECHA_ELECTRICIDAD = 0.14 # proporción
 # ----------------------------------------------
 # RUTAS Y NOMBRES DE ARCHIVOS
 # ----------------------------------------------
-base_path = os.path.abspath(__file__)
-desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'datos')
-energia_path = os.path.join(data_path, 'energia')
+BASE_PATH = os.path.abspath(__file__)
+DESVAB_ROOT = os.path.dirname(os.path.dirname(BASE_PATH))
+DATA_PATH = os.path.join(DESVAB_ROOT, 'datos')
+ENERGIA_PATH = os.path.join(DATA_PATH, 'energia')
 
 # Caso base
-consumos_datadis_path = os.path.join(energia_path, 'consumos_datadis.csv') # Consumos eléctricos por CP
+CONSUMOS_DATADIS_PATH = os.path.join(ENERGIA_PATH, 'consumos_datadis.csv') # consumos eléctricos por CP
 
 # Vector E1
-potencial_radiacion_path = os.path.join(energia_path, 'potencial_PV') # carpeta con archivos de potencial de radiación por barrio (catastros)
+POTENCIAL_RADIACION_PATH = os.path.join(ENERGIA_PATH, 'potencial_PV') # carpeta con archivos de potencial de radiación por barrio (catastros)
 
 # Vector V3
-vivienda_path = os.path.join(data_path, 'vivienda')
-certificados_path = os.path.join(vivienda_path, 'inmuebles_certificacion_energetica.xlsx') # certificados energéticos
-antiguedades_path = os.path.join(vivienda_path, 'inmuebles_antiguedad.xlsx') # distribución de antigüedad de edificios
+VIVIENDA_PATH = os.path.join(DATA_PATH, 'vivienda')
+CERTIFICADOS_PATH = os.path.join(VIVIENDA_PATH, 'inmuebles_certificacion_energetica.xlsx') # certificados energéticos
+ANTIGUEDADES_PATH = os.path.join(VIVIENDA_PATH, 'inmuebles_antiguedad.xlsx') # distribución de antigüedad de edificios
 
 
 # ----------------------------------------------
@@ -85,7 +97,12 @@ antiguedades_path = os.path.join(vivienda_path, 'inmuebles_antiguedad.xlsx') # d
 # ----------------------------------------------
 class AreaEnergia:
     """
-    explicar clase
+    Clase para gestionar y calcular el consumo energético y la
+    huella de carbono en diferentes sectores y escenarios.
+    Permite calcular los consumos eléctricos y de gas por barrio,
+    así como la huella de carbono asociada. Incluye distintos escenarios
+    de autoconsumo, electrificación, reducción de consumo y mejora del
+    parque de edificios.
     """
     def __init__(
             self,
@@ -94,15 +111,25 @@ class AreaEnergia:
             valores_e3: List[float] = E3,
             valores_v3: List[float] = V3,
             verbose: bool = False
-            ):
+            ) -> None:
         """
-        descripción de inicialización
+        Inicializa una instancia de la clase AreaEnergia,
+        calculando el caso base y los vectores E1, E2, E3 y V3
+        para los valores especificados.
 
         Args:
-            valores_v3 (list, optional): _description_. Defaults to [0, .25, .5, .75, 1].
-            valores_v2 (list, optional): _description_. Defaults to [0, .25, .5, .75, 1].
-            valores_v3 (list, optional): _description_. Defaults to [0, .04, .08, .12, .16].
-            verbose (bool, optional): _description_. Defaults to False.
+            - valores_e1 (list, opcional):
+                Lista de porcentajes de autoconsumo a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - valores_e2 (list, opcional):
+                Lista de porcentajes de electrificación a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - valores_e3 (list, opcional):
+                Lista de porcentajes de reducción de consumo a evaluar.
+                Por defecto, [0, .04, .08, .12, .16].
+            - verbose (bool, opcional):
+                Indica si se deben imprimir mensajes informativos.
+                Por defecto, False.
         """
         # Inicializar atributos con caso base
         if verbose:
@@ -170,13 +197,19 @@ class AreaEnergia:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE CASO BASE
     # ----------------------------------------------
-    def _get_consumos_electricos(self):
+    def _get_consumos_electricos(self) -> None:
         """
-        explicar método
+        Calcula los consumos eléctricos por barrio a partir
+        de los datos de consumo por CP.
+
+        Este método lee el archivo de consumos eléctricos por
+        CP, renombra y procesa las columnas, calcula el consumo
+        total por CP y luego distribuye estos consumos a los
+        barrios utilizando una matriz de superposición barrio-CP.
         """
         ### Consumos por CP
         # Leer archivo de datos de consumo
-        consumos_cp = pd.read_csv(consumos_datadis_path, sep=',',
+        consumos_cp = pd.read_csv(CONSUMOS_DATADIS_PATH, sep=',',
                                   usecols=[0, 6, 7, 8], encoding='utf-8',
                                   skiprows=5, skipfooter=3,
                                   na_values='-', engine='python')
@@ -207,9 +240,13 @@ class AreaEnergia:
         self.consumos_electricos = consumos_barrio
 
 
-    def _get_consumos_gas(self):
+    def _get_consumos_gas(self) -> None:
         """
-        explicar método
+        Calcula los consumos de gas por barrio a partir de los
+        consumos eléctricos.
+
+        Este método utiliza los ratios de consumo de gas respecto a
+        eléctrico para cada sector y calcula el consumo de gas total por barrio.
         """
         consumos_gas = self.consumos_electricos.copy()
         consumos_gas['Residencial'] *= RATIOS_ELEC_GAS['Residencial']
@@ -220,9 +257,13 @@ class AreaEnergia:
         self.consumos_gas = consumos_gas
 
     
-    def _get_consumo_calefaccion(self):
+    def _get_consumo_calefaccion(self) -> None:
         """
-        explicar método
+        Calcula el consumo energético destinado a calefacción en el
+        sector residencial.
+
+        Este método combina los consumos eléctricos y de gas residenciales
+        multiplicados por sus respectivos factores de calefacción.
         """
         consumo_calefaccion = (
             self.consumos_electricos['Residencial'] * CALEFACCION['Electricidad']) + (
@@ -231,9 +272,12 @@ class AreaEnergia:
         self.consumo_calefaccion = consumo_calefaccion
 
     
-    def _get_huella(self):
+    def _get_huella(self) -> None:
         """
-        explicar método
+        Calcula la huella de carbono total por barrio.
+
+        Este método suma las emisiones de carbono de los consumos
+        eléctricos y de gas utilizando los factores de emisión correspondientes.
         """
         huella = (
             self.consumos_electricos['Total'] * FACTOR_EMISION_MIX['Actual']) + (
@@ -241,10 +285,14 @@ class AreaEnergia:
         self.huella = huella
 
     
-    def _get_caso_base(self):
+    def _get_caso_base(self) -> None:
         """
-        explicar método
-        wrapper
+        Calcula todos los componentes del caso base: consumos
+        eléctricos, consumos de gas, consumo de calefacción y huella de
+        carbono.
+
+        Este método es un wrapper que llama a los métodos internos
+        necesarios para calcular el caso base.
         """
         self._get_consumos_electricos()
         self._get_consumos_gas()
@@ -255,10 +303,7 @@ class AreaEnergia:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR E1, AUTOCONSUMO
     # ----------------------------------------------
-    def _get_potencial_pv(self):
-        """
-        explicar método
-        """
+    def _get_potencial_pv(self) -> None:
         """
         Genera y almacena un dataframe con el potencial de radiación
         solar por tipo de edificio y barrio de València y otro dataframe
@@ -283,7 +328,7 @@ class AreaEnergia:
         }
 
         # Recorrer archivos
-        for file in os.listdir(potencial_radiacion_path):
+        for file in os.listdir(POTENCIAL_RADIACION_PATH):
             # Si el archivo es un csv
             if file.endswith('.csv'):
                 # Extraer ID de barrio del nombre de archivo
@@ -292,7 +337,7 @@ class AreaEnergia:
                     str(int(id_barrio[:2])) + '.' + str(int(id_barrio[2])))
                 # Leer archivo
                 catastros = pd.read_csv(
-                    os.path.join(potencial_radiacion_path, file), sep=',',
+                    os.path.join(POTENCIAL_RADIACION_PATH, file), sep=',',
                     encoding='latin-1')
                 # Eliminar filas con currentUse == ' ' (espacio)
                 catastros = catastros[catastros['currentUse'] != ' ']
@@ -320,9 +365,32 @@ class AreaEnergia:
         self.potencial_pv = potencial.sort_index()
 
 
-    def get_vector_e1(self, autoconsumo: float, escenario: str):
+    def get_vector_e1(
+            self,
+            autoconsumo: float,
+            escenario: str
+            ) -> pd.Series:
         """
-        explicar método
+        Genera y almacena el potencial de radiación solar por
+        tipo de edificio y barrio, así como el número de
+        edificios por tipo de uso y barrio.
+
+        Este método lee los archivos de potencial de radiación
+        solar, calcula el potencial de generación fotovoltaica
+        ajustado por eficiencia y rendimiento, y agrupa los
+        datos por tipo de uso y barrio.
+
+        Args:
+            - autoconsumo (float):
+                Proporción de autoconsumo (entre 0 y 1).
+            - escenario (str):
+                Escenario de factor de emisión a utilizar;
+                'Actual', 'PNIEC' o 'Borrador PNIEC'.
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e.
+        
         """
         ### Comprobar valores de parámetros
         # Comprobar que el autoconsumo está entre 0 y 1
@@ -350,9 +418,29 @@ class AreaEnergia:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR E2, ELECTRIFICACIÓN
     # ----------------------------------------------
-    def get_vector_e2(self, electrificacion: float, escenario: str):
+    def get_vector_e2(
+            self,
+            electrificacion: float,
+            escenario: str
+            ) -> pd.Series:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico
+        de electrificación y factor de emisión.
+
+        Este método ajusta los consumos eléctricos y de gas en
+        función del grado de electrificación y calcula la huella de
+        carbono resultante.
+
+        Args:
+            - electrificacion (float):
+                Proporción de electrificación (entre 0 y 1).
+            - escenario (str): 
+                Escenario de factor de emisión a utilizar;
+                'Actual', 'PNIEC' o 'Borrador PNIEC'.
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e.
         """
         ### Comprobar valores de parámetros
         # Comprobar que la electrificación está entre 0 y 1
@@ -380,9 +468,30 @@ class AreaEnergia:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR E3, REDUCCIÓN DE CONSUMO
     # ----------------------------------------------
-    def get_vector_e3(self, reduccion: float, escenario: str):
+    def get_vector_e3(
+            self,
+            reduccion: float,
+            escenario: str
+            ) -> pd.Series:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico
+        de reducción de consumo y factor de emisión.
+
+        Este método ajusta los consumos eléctricos y de gas en
+        función de la reducción de demanda y calcula la huella de
+        carbono resultante.
+
+        Args:
+            - reduccion (float):
+                Proporción de reducción de consumo (entre 0 y 1).
+            - escenario (str):
+                Escenario de factor de emisión a utilizar;
+                'Actual', 'PNIEC' o 'Borrador PNIEC'.
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e.
+        
         """
         ### Comprobar valores de parámetros
         # Comprobar que la reducción está entre 0 y 1
@@ -410,13 +519,18 @@ class AreaEnergia:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR V3, MEJORA PARQUE EDIFICIOS
     # ----------------------------------------------
-    def _get_certificados(self):
+    def _get_certificados(self) -> None:
         """
         Lee el archivo de certificados energéticos y genera los
         atributos certificados_consumo y certificados_emisiones.
+
+        Este método procesa los certificados energéticos de los
+        inmuebles, corrige datos erróneos, clasifica por
+        antigüedad y calcula estadísticas de consumo y emisiones
+        por barrio y antigüedad.
         """        
         # Leer archivo
-        df_certificados = pd.read_excel(certificados_path)
+        df_certificados = pd.read_excel(CERTIFICADOS_PATH)
 
         # Cambiar número de distrito 0 por 5 (es error de la fuente de datos,
         # son todo edificios de La Saïdia)
@@ -468,13 +582,17 @@ class AreaEnergia:
         self.certificados_emisiones = df_emisiones
 
 
-    def _get_antiguedades(self):
+    def _get_antiguedades(self) -> None:
         """
         Lee el archivo de antigüedad de edificios y genera el atributo
         antiguedades.
+
+        Este método procesa los datos de antigüedad de los edificios,
+        asigna IDs de barrio y limpia los datos eliminando filas y
+        columnas innecesarias.
         """
         # Leer archivo
-        df_edificios = pd.read_excel(antiguedades_path, skiprows=2, skipfooter=2)
+        df_edificios = pd.read_excel(ANTIGUEDADES_PATH, skiprows=2, skipfooter=2)
 
         # Eliminar últimas 5 columnas
         df_edificios.drop(df_edificios.columns[-5:], axis=1, inplace=True)
@@ -511,10 +629,14 @@ class AreaEnergia:
         self.antiguedades = df_edificios
         
     
-    def _get_distribuciones(self):
+    def _get_distribuciones(self) -> None:
         """
         Genera los atributos distribucion_certificados_consumo y
         distribucion_certificados_emisiones.
+
+        Este método ajusta las distribuciones de certificados de
+        consumo y emisiones en función de la antigüedad de los
+        edificios en cada barrio.
         """
         # Sacar aproximación de distribución de letras para cada barrio
         # Sumar total de certificados por barrio, antigüedad y letra y
@@ -556,9 +678,14 @@ class AreaEnergia:
         self.distribucion_certificados_emisiones = emisiones
 
     
-    def _get_ahorro(self):
+    def _get_ahorro(self) -> None:
         """
-        explicar método
+        Calcula el potencial de ahorro energético y de emisiones mediante
+        la rehabilitación de edificios certificados con letras E, F y G.
+
+        Este método determina el porcentaje de certificados con bajas
+        calificaciones energéticas y calcula el ahorro potencial en
+        consumo de gas y electricidad.
         """
         # Calcular porcentaje de certificados con letras E-G
         cert_EFG = self.certificados_consumo[
@@ -573,9 +700,13 @@ class AreaEnergia:
         self.potencial_ahorro_electricidad = ahorro * CALEFACCION_SATISFECHA_ELECTRICIDAD
 
     
-    def _wrap_v3(self):
+    def _wrap_v3(self) -> None:
         """
-        explicar método
+        Envuelve los métodos necesarios para calcular las mejoras del
+        parque de edificios (V3).
+
+        Este método ejecuta en secuencia los métodos para obtener certificados,
+        antigüedades, distribuciones y ahorro energético.
         """
         self._get_certificados()
         self._get_antiguedades()
@@ -583,9 +714,29 @@ class AreaEnergia:
         self._get_ahorro()
 
     
-    def get_vector_v3(self, mejora: float, escenario: str):
+    def get_vector_v3(
+            self,
+            mejora: float,
+            escenario: str
+            ) -> pd.Series:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico de
+        mejora del parque de edificios y factor de emisión.
+
+        Este método ajusta los consumos eléctricos y de gas en función de
+        las mejoras implementadas en el parque de edificios y calcula
+        la huella de carbono resultante.
+
+        Args:
+            - mejora (float):
+                Proporción de mejora del parque de edificios (entre 0 y 1).
+            - escenario (str):
+                Escenario de factor de emisión a utilizar;
+                'Actual', 'PNIEC' o 'Borrador PNIEC'.
+
+        Returns:
+            - huella (pd.Series):
+                Huella de carbono por barrio en toneladas de CO2 equivalente.
         """
         ### Comprobar valores de parámetros
         # Comprobar que la mejora está entre 0 y 1

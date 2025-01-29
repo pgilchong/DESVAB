@@ -1,10 +1,18 @@
+# movilidad.py
 
 """
-    explicar módulo
+MÓDULO ÁREA MOVILIDAD
 
-    ya vienen los datos procesados en excel, hay que recodificarlos
-    a barrios
+Este módulo contiene la clase `AreaMovilidad`, una herramienta para gestionar
+y calcular las emisiones de CO2 y la huella de carbono asociada al tráfico
+rodado en diferentes escenarios de movilidad. Permite mapear las emisiones
+provenientes del transporte público y privado por barrio y cuadrante, además
+de evaluar escenarios de reducción del uso de vehículo privado, promoción de
+transporte público, fomento de movilidad activa y planificación urbana
+sostenible. Facilita el análisis de impacto ambiental del tráfico en la ciudad
+de València mediante datos procesados de Excel distribuidos a nivel de barrio.
 """
+
 
 # ----------------------------------------------
 # MÓDULOS
@@ -14,6 +22,7 @@ import os
 import pandas as pd
 import time
 import warnings
+
 from geo import get_matriz_cuadrantes, get_poligonos_barrios, get_poligonos_cuadrantes
 from math import isclose
 
@@ -31,8 +40,6 @@ U2 = [0., .05, .1, .15, .2]
 # CONSTANTES
 # ----------------------------------------------
 # Caso base
-
-
 # Vectores M1 y M2
 FACTOR_EMISION_MIX = { # factores de emisión de la red eléctrica
     'Actual': 0.12, # tCO2e/MWh
@@ -47,12 +54,12 @@ MAXIMO_U2 = 0.2
 # ----------------------------------------------
 # RUTAS Y NOMBRES DE ARCHIVOS
 # ----------------------------------------------
-base_path = os.path.abspath(__file__)
-desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'datos')
-movilidad_path = os.path.join(data_path, 'movilidad')
+BASE_PATH = os.path.abspath(__file__)
+DESVAB_ROOT = os.path.dirname(os.path.dirname(BASE_PATH))
+DATA_PATH = os.path.join(DESVAB_ROOT, 'datos')
+MOVILIDAD_PATH = os.path.join(DATA_PATH, 'movilidad')
 
-excel_path = os.path.join(movilidad_path, 'contaminacion_trafico_2021_v3.xlsx')
+EXCEL_PATH = os.path.join(MOVILIDAD_PATH, 'contaminacion_trafico_2021_v3.xlsx')
 
 
 # ----------------------------------------------
@@ -60,7 +67,11 @@ excel_path = os.path.join(movilidad_path, 'contaminacion_trafico_2021_v3.xlsx')
 # ----------------------------------------------
 class AreaMovilidad:
     """
-    explicar clase
+    Clase para gestionar y calcular las emisiones de tráfico y su impacto
+    ambiental en diferentes escenarios. Permite calcular las emisiones directas
+    de CO2 y el consumo energético asociado al transporte, así como la huella de
+    carbono resultante. Incluye distintos escenarios de movilidad sostenible
+    y cambios en la combinación energética de la red eléctrica.
     """
     def __init__(
             self,
@@ -68,9 +79,29 @@ class AreaMovilidad:
             valores_m2 = M2,
             valores_m3 = M3,
             verbose = False
-        ):
+        ) -> None:
         """
-        explicar método
+        Inicializa una instancia de la clase AreaMovilidad, calculando el caso base
+        y los vectores M1, M2, M3 y U2.
+
+        IMPORTANTE: Los cálculos no los realiza la clase, sino que se cargan desde
+        un archivo Excel con los datos preprocesados. La clase se encarga de cargar
+        los datos, distribuirlos por barrios y organizarlos en vectores para su posterior
+        uso.
+
+        Args:
+            - valores_m1 (list, opcional):
+                Lista de porcentajes de reducción de uso de vehículo privado a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - valores_m2 (list, opcional):
+                Lista de porcentajes de promoción de transporte público a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - valores_m3 (list, opcional):
+                Lista de porcentajes de promoción de movilidad activa a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - verbose (bool, opcional):
+                Indica si se deben imprimir mensajes informativos.
+                Por defecto, False.
         """
         if verbose:
             print('Inicializando Área Movilidad...')
@@ -78,7 +109,7 @@ class AreaMovilidad:
             start_time = time.time()
 
         # Cargar datos de excel
-        excel = pd.ExcelFile(excel_path)
+        excel = pd.ExcelFile(EXCEL_PATH)
         
         # Cargar datos de cuadrantes y barrios
         matriz_overlap = get_matriz_cuadrantes()

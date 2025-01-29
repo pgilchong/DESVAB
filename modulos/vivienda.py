@@ -1,7 +1,18 @@
+# vivienda.py
 
 """
-    explicar módulo
+MÓDULO ÁREA VIVIENDA
+
+Este módulo contiene la clase `AreaVivienda`, una herramienta para gestionar
+y calcular la huella de carbono asociada a la construcción de nuevas viviendas
+en diferentes escenarios urbanísticos. Permite analizar el impacto ambiental
+de la nueva construcción considerando diferentes ratios de desarrollo urbano
+y la implementación de criterios de sostenibilidad en las edificaciones.
+Incluye funcionalidades para distribuir las emisiones por barrio y evaluar
+escenarios de reducción de nueva construcción y promoción de viviendas
+ecoeficientes en la ciudad de València.
 """
+
 
 # ----------------------------------------------
 # MÓDULOS
@@ -9,6 +20,7 @@
 import os
 import pandas as pd
 import time
+
 from geo import get_barrios_ids
 from typing import List
 
@@ -36,13 +48,13 @@ REDUCCION_SOSTENIBILIDAD = 0.69 # % de reducción de emisiones en viviendas sost
 # ----------------------------------------------
 # RUTAS Y NOMBRES DE ARCHIVOS
 # ----------------------------------------------
-base_path = os.path.abspath(__file__)
-desvab_root = os.path.dirname(os.path.dirname(base_path))
-data_path = os.path.join(desvab_root, 'datos')
-vivienda_path = os.path.join(data_path, 'vivienda')
+BASE_PATH = os.path.abspath(__file__)
+DESVAB_ROOT = os.path.dirname(os.path.dirname(BASE_PATH))
+DATA_PATH = os.path.join(DESVAB_ROOT, 'datos')
+VIVIENDA_PATH = os.path.join(DATA_PATH, 'vivienda')
 
 # Caso base
-distribucion_nueva_construccion_path = os.path.join(vivienda_path, 'distribución_nueva_construcción_.xlsx')
+DISTRIBUCION_NUEVA_CONSTRUCCION_PATH = os.path.join(VIVIENDA_PATH, 'distribución_nueva_construcción_.xlsx')
 
 
 # ----------------------------------------------
@@ -50,7 +62,11 @@ distribucion_nueva_construccion_path = os.path.join(vivienda_path, 'distribució
 # ----------------------------------------------
 class AreaVivienda:
     """
-    explicar clase
+    Clase para gestionar y calcular el impacto ambiental de la construcción
+    residencial. Permite cuantificar las emisiones de CO2 asociadas a la nueva
+    construcción distribuida por barrios, y evaluar escenarios de reducción
+    del desarrollo urbanístico y de implementación de prácticas constructivas
+    sostenibles.
     """
     def __init__(
             self,
@@ -59,7 +75,19 @@ class AreaVivienda:
             verbose: bool = False
             ):
         """
-        explicar método
+        Inicializa una instancia de la clase AreaVivienda, calculando el caso base
+        y los vectores V1 y V2 para los valores especificados.
+
+        Args:
+            - valores_v1 (list, opcional):
+                Lista de porcentajes de reducción de nueva construcción a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - valores_v2 (list, opcional):
+                Lista de porcentajes de viviendas sostenibles a evaluar.
+                Por defecto, [0, .25, .5, .75, 1].
+            - verbose (bool, opcional):
+                Indica si se deben imprimir mensajes informativos.
+                Por defecto, False.
         """
         # Inicializar atributos con caso base
         if verbose:
@@ -105,10 +133,15 @@ class AreaVivienda:
     # ----------------------------------------------
     def _get_nueva_construccion(self):
         """
-        explicar método
+        Calcula la distribución de nuevas viviendas por barrio a partir de
+        los datos históricos de construcción.
+
+        Este método lee el archivo de distribución de nueva construcción,
+        procesa los porcentajes por barrio y calcula el número absoluto de
+        viviendas nuevas basado en la media anual de construcción.
         """
         # Leer archivo de distribución de nueva construcción
-        distribucion = pd.read_excel(distribucion_nueva_construccion_path,
+        distribucion = pd.read_excel(DISTRIBUCION_NUEVA_CONSTRUCCION_PATH,
                                      usecols=[0, 1, 3, 4], index_col=0)
         distribucion.index = distribucion.index.astype(str)
 
@@ -124,7 +157,12 @@ class AreaVivienda:
 
     def _get_huella(self):
         """
-        explicar método
+        Calcula la huella de carbono asociada a la construcción de nuevas
+        viviendas.
+
+        Este método utiliza el número de viviendas nuevas por barrio, la
+        superficie promedio por vivienda y las emisiones por m2 para
+        determinar las emisiones totales de CO2e.
         """
         # Calcular huella de carbono de nueva construcción
         huella = self.viviendas_nuevas * SUPERFICIE_PROMEDIO * EMISIONES_NUEVA_CONSTRUCCION
@@ -135,8 +173,11 @@ class AreaVivienda:
 
     def _get_caso_base(self):
         """
-        explicar método
-        wrapper
+        Calcula todos los componentes del caso base: distribución de nuevas
+        construcciones y huella de carbono asociada.
+
+        Este método coordina la ejecución de los métodos de cálculo de
+        nueva construcción y emisiones correspondientes.
         """
         self._get_nueva_construccion()
         self._get_huella()
@@ -145,9 +186,22 @@ class AreaVivienda:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR V1, REDUCCIÓN DE NUEVA CONSTRUCCIÓN
     # ----------------------------------------------
-    def get_vector_v1(self, construccion: float):
+    def get_vector_v1(
+            self,
+            construccion: float
+            ) -> pd.Series:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico de reducción
+        en la nueva construcción.
+
+        Args:
+            - construccion (float):
+                Proporción de reducción en nueva construcción (entre 0 y 1).
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e, considerando la reducción
+                en el número de viviendas construidas.
         """
         # Calcular huella de carbono para valor de construcción
         viviendas_nuevas = self.viviendas_nuevas * (1 - construccion)
@@ -161,9 +215,23 @@ class AreaVivienda:
     # ----------------------------------------------
     # MÉTODOS PARA CÁLCULO DE VECTOR V2, VIVIENDAS SOSTENIBLES
     # ----------------------------------------------
-    def get_vector_v2(self, nuevas_sostenibles: float):
+    def get_vector_v2(
+            self,
+            nuevas_sostenibles: float
+            ) -> pd.Series:
         """
-        explicar método
+        Calcula la huella de carbono para un escenario específico de
+        implementación de viviendas sostenibles.
+
+        Args:
+            - nuevas_sostenibles (float):
+                Proporción de viviendas nuevas construidas con criterios
+                sostenibles (entre 0 y 1).
+
+        Devuelve:
+            - huella (pd.Series):
+                Huella de carbono por barrio en tCO2e, aplicando la reducción
+                de emisiones asociada a las prácticas constructivas sostenibles.
         """
         # Calcular huella de carbono a partir del caso base, reduciendo emisiones por vivienda sostenible
         huella = self.huella - self.huella * nuevas_sostenibles * REDUCCION_SOSTENIBILIDAD
